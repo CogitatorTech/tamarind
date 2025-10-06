@@ -1,0 +1,23 @@
+version: "1.0"
+
+profile:
+  name: qodana.recommended
+
+projectJDK: "21"
+
+exclude:
+  - name: All
+    paths:
+      - target
+      - .git
+      - .idea
+      - .m2
+      - node_modules
+      - build
+
+bootstrap: |
+  set -e
+  echo "Installing dependencies..."
+  mvn clean compile -DskipTests
+
+linter: jetbrains/qodana-jvm:2025.2

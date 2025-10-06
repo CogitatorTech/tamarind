@@ -1,0 +1,311 @@
+digraph TamarindArchitecture {
+    // Graph settings
+    graph [
+rankdir = LR,
+label = "Tamarind Data Lakehouse Architecture (v0.1.0-SNAPSHOT)",
+fontsize = 20,
+labelloc = t,
+compound = true,
+splines = ortho,
+nodesep = 0.8,
+ranksep = 1.2
+];
+
+node [shape = rectangle, style = "rounded,filled", fontname = "Helvetica", fontsize = 11];
+edge [fontname = "Helvetica", fontsize = 10];
+
+// ========================================
+ // CLIENT LAYER
+ // ========================================
+    subgraph cluster_clients {
+label = "Client Layer";
+style = "rounded,filled";
+fillcolor = "lightblue";
+fontsize = 14;
+
+CLI [label = "CLI\n(Picocli)", fillcolor = "azure2", shape = component];
+REST_Client [label = "REST Client\n(curl, SDK)", fillcolor = "azure2", shape = component];
+Arrow_Client [label = "Arrow Flight Client\n(Python, Java)", fillcolor = "azure2", shape = component];
+Web_UI [label = "Web UI\n(Future)", fillcolor = "azure2", shape = component, style = "rounded,filled,dashed"];
+}
+
+// ========================================
+ // API INTERFACE LAYER
+ // ========================================
+    subgraph cluster_api {
+label = "API Interface Layer (/api/v1/)";
+style = "rounded,filled";
+fillcolor = "lightcoral";
+fontsize = 14;
+
+subgraph cluster_rest_api {
+label = "REST API";
+style = "rounded,filled";
+fillcolor = "mistyrose";
+
+QueryResourceV1 [label = "QueryResourceV1\n/api/v1/query\nPOST", fillcolor = "lightyellow"];
+BatchQueryResource [label = "BatchQueryResource\n/api/v1/query/batch\nPOST", fillcolor = "lightyellow"];
+MetadataResourceV1 [label = "MetadataResourceV1\n/api/v1/metadata/*\nGET", fillcolor = "lightyellow"];
+}
+
+subgraph cluster_arrow_api {
+label = "Arrow Flight API";
+style = "rounded,filled";
+fillcolor = "lightsteelblue";
+
+ArrowFlightServer [label = "ArrowFlightServerService\nPort 8815", fillcolor = "powderblue"];
+FlightProducer [label = "TamarindFlightSqlProducer\ngetStream()\ngetFlightInfo()", fillcolor = "powderblue"];
+}
+
+subgraph cluster_cli_api {
+label = "CLI Interface";
+style = "rounded,filled";
+fillcolor = "lightgreen";
+
+MainCommand [label = "MainCommand\nQuery Execution", fillcolor = "palegreen"];
+QueryCommand [label = "QueryCommand\nOutput Formats:\nTable, JSON, CSV", fillcolor = "palegreen"];
+}
+}
+
+// ========================================
+ // MIDDLEWARE LAYER
+ // ========================================
+    subgraph cluster_middleware {
+label = "Middleware Layer";
+style = "rounded,filled";
+fillcolor = "lavender";
+fontsize = 14;
+
+subgraph cluster_security {
+label = "Security";
+style = "rounded,filled";
+fillcolor = "mistyrose";
+
+RateLimiter [label = "RateLimiter\nBucket4j\n100 req/min", fillcolor = "lightyellow"];
+AuditLogger [label = "AuditLogger\nQuery Logging\nSecurity Events", fillcolor = "lightyellow"];
+Auth [label = "Authentication\nBasic Auth\nJWT (Future)", fillcolor = "lightyellow"];
+}
+
+subgraph cluster_caching {
+label = "Caching Layer";
+style = "rounded,filled";
+fillcolor = "lightcyan";
+
+QueryCache [label = "QueryResultCache\nCaffeine\nTTL: 10min", fillcolor = "azure"];
+MetadataCache [label = "MetadataCache\nSchema Cache\nFile List Cache", fillcolor = "azure"];
+}
+
+subgraph cluster_services {
+label = "Services";
+style = "rounded,filled";
+fillcolor = "lightgreen";
+
+DataInitializer [label = "DataInitializer\nS3/Local File Scanner\nView Creation", fillcolor = "palegreen"];
+ScheduledQuery [label = "ScheduledQueryService\nCron Scheduler\n@Scheduled", fillcolor = "palegreen"];
+HealthChecks [label = "TamarindHealthChecks\nReadiness/Liveness", fillcolor = "palegreen"];
+}
+}
+
+// ========================================
+ // ENGINE ABSTRACTION LAYER
+ // ========================================
+    subgraph cluster_engine_layer {
+label = "Query Engine Layer (Pluggable)";
+style = "rounded,filled";
+fillcolor = "lightyellow";
+fontsize = 14;
+
+QueryEngineInterface [label = "<<interface>>\nQueryEngine\n\nexecuteQuery()\nexecuteUpdate()\ncreateViewFromFile()\ngetConnection()\nisHealthy()",
+fillcolor = "gold", shape = box3d, fontsize = 12];
+
+QueryEngineProducer [label = "QueryEngineProducer\n@Produces\nCDI Bean Factory",
+fillcolor = "khaki", shape = hexagon];
+}
+
+// ========================================
+ // ENGINE IMPLEMENTATIONS
+ // ========================================
+    subgraph cluster_engines {
+label = "Engine Implementations";
+style = "rounded,filled";
+fillcolor = "lightsteelblue";
+fontsize = 14;
+
+subgraph cluster_duckdb {
+label = "DuckDB Engine (Default)";
+style = "rounded,filled";
+fillcolor = "powderblue";
+
+DuckDBEngine [label = "DuckDBEngine\nIn-Memory/Persistent\nOLAP Optimized", fillcolor = "lightskyblue"];
+DuckDBPool [label = "DuckDBConnectionPool\nHikariCP\nMax: 10 connections", fillcolor = "lightskyblue"];
+}
+
+subgraph cluster_postgresql {
+label = "PostgreSQL Engine";
+style = "rounded,filled";
+fillcolor = "lightcyan";
+
+PostgreSQLEngine [label = "PostgreSQLEngine\nJDBC Connection\nOLTP Workloads", fillcolor = "azure"];
+}
+
+CustomEngine [label = "Custom Engine\n(Extensible)", fillcolor = "lightgray", style = "rounded,filled,dashed"];
+}
+
+// ========================================
+ // DATA LAYER
+ // ========================================
+    subgraph cluster_data {
+label = "Data Layer";
+style = "rounded,filled";
+fillcolor = "lightgreen";
+fontsize = 14;
+
+subgraph cluster_storage {
+label = "Storage";
+style = "rounded,filled";
+fillcolor = "palegreen";
+
+LocalFiles [label = "Local Files\nParquet, CSV, JSON", fillcolor = "lightgreen", shape = folder];
+S3Storage [label = "AWS S3\ns3:// URIs\nHTTPFS Extension", fillcolor = "lightgreen", shape = folder];
+DatabaseFiles [label = "Database Files\n.duckdb\nPersistent Storage", fillcolor = "lightgreen", shape = folder];
+}
+
+subgraph cluster_external_db {
+label = "External Databases";
+style = "rounded,filled";
+fillcolor = "lightyellow";
+
+PostgreSQL_DB [label = "PostgreSQL\nExternal DB", fillcolor = "yellow", shape = cylinder];
+MySQL_DB [label = "MySQL\n(Future)", fillcolor = "yellow", shape = cylinder, style = "rounded,filled,dashed"];
+}
+}
+
+// ========================================
+ // MONITORING LAYER
+ // ========================================
+    subgraph cluster_monitoring {
+label = "Monitoring & Observability";
+style = "rounded,filled";
+fillcolor = "lightpink";
+fontsize = 14;
+
+Prometheus [label = "Prometheus Metrics\n/metrics", fillcolor = "mistyrose"];
+HealthEndpoints [label = "Health Endpoints\n/q/health/live\n/q/health/ready", fillcolor = "mistyrose"];
+Logging [label = "Structured Logging\nLog4j2\nAudit Trail", fillcolor = "mistyrose"];
+}
+
+// ========================================
+ // CONFIGURATION
+ // ========================================
+    subgraph cluster_config {
+label = "Configuration";
+style = "rounded,filled";
+fillcolor = "wheat";
+fontsize = 14;
+
+AppConfig [label = "application.yml\nEngine Settings\nCache Settings\nSecurity Config", fillcolor = "lightyellow"];
+EnvVars [label = "Environment Variables\nTAMARIND_*\nAWS_*", fillcolor = "lightyellow"];
+}
+
+// ========================================
+ // CLIENT TO API CONNECTIONS
+ // ========================================
+    CLI -> QueryCommand [label = "execute", color = "blue"];
+REST_Client -> QueryResourceV1 [label = "HTTP POST\nJSON", color = "blue"];
+REST_Client -> BatchQueryResource [label = "HTTP POST\nJSON", color = "blue"];
+REST_Client -> MetadataResourceV1 [label = "HTTP GET", color = "blue"];
+Arrow_Client -> ArrowFlightServer [label = "gRPC\nArrow IPC", color = "blue"];
+Web_UI -> QueryResourceV1 [label = "HTTP", color = "blue", style = dashed];
+
+// ========================================
+ // API TO MIDDLEWARE CONNECTIONS
+ // ========================================
+    QueryResourceV1 -> RateLimiter [label = "check"];
+QueryResourceV1 -> AuditLogger [label = "log"];
+QueryResourceV1 -> QueryCache [label = "get/put"];
+BatchQueryResource -> AuditLogger [label = "log"];
+MetadataResourceV1 -> MetadataCache [label = "get"];
+
+ArrowFlightServer -> FlightProducer [label = "delegate"];
+QueryCommand -> QueryCache [label = "bypass", style = dashed];
+
+// Security applies to all APIs
+    RateLimiter -> Auth [style = invis];
+
+// ========================================
+ // MIDDLEWARE TO ENGINE CONNECTIONS
+ // ========================================
+    QueryResourceV1 -> QueryEngineInterface [label = "executeQuery()", color = "red", penwidth = 2];
+BatchQueryResource -> QueryEngineInterface [label = "executeQuery()", color = "red", penwidth = 2];
+MetadataResourceV1 -> QueryEngineInterface [label = "getConnection()", color = "red"];
+FlightProducer -> QueryEngineInterface [label = "getConnection()", color = "red"];
+QueryCommand -> QueryEngineInterface [label = "executeQuery()", color = "red", penwidth = 2];
+
+DataInitializer -> QueryEngineInterface [label = "createViewFromFile()"];
+ScheduledQuery -> QueryEngineInterface [label = "executeQuery()"];
+HealthChecks -> QueryEngineInterface [label = "isHealthy()"];
+
+// ========================================
+ // ENGINE ABSTRACTION TO IMPLEMENTATIONS
+ // ========================================
+    QueryEngineProducer -> QueryEngineInterface [label = "produces", style = dashed];
+QueryEngineInterface -> DuckDBEngine [label = "implements", style = dotted, arrowhead = empty];
+QueryEngineInterface -> PostgreSQLEngine [label = "implements", style = dotted, arrowhead = empty];
+QueryEngineInterface -> CustomEngine [label = "implements", style = dotted, arrowhead = empty, color = gray];
+
+QueryEngineProducer -> DuckDBEngine [label = "@Produces\n(default)", color = "darkgreen", penwidth = 2];
+QueryEngineProducer -> PostgreSQLEngine [label = "@Produces\n(config)", color = "darkgreen"];
+
+// ========================================
+ // ENGINE TO DATA CONNECTIONS
+ // ========================================
+    DuckDBEngine -> DuckDBPool [label = "uses"];
+DuckDBPool -> DatabaseFiles [label = "read/write", color = "darkgreen"];
+DuckDBEngine -> LocalFiles [label = "read_parquet()\nread_csv()", color = "darkgreen"];
+DuckDBEngine -> S3Storage [label = "s3:// URIs\nHTTPFS", color = "darkgreen"];
+
+PostgreSQLEngine -> PostgreSQL_DB [label = "JDBC", color = "darkblue", penwidth = 2];
+CustomEngine -> MySQL_DB [label = "JDBC", color = gray, style = dashed];
+
+// ========================================
+ // MONITORING CONNECTIONS
+ // ========================================
+    QueryEngineInterface -> Prometheus [label = "metrics", style = dashed];
+QueryEngineInterface -> Logging [label = "logs", style = dashed];
+HealthChecks -> HealthEndpoints [label = "expose"];
+AuditLogger -> Logging [label = "writes"];
+
+// ========================================
+ // CONFIGURATION CONNECTIONS
+ // ========================================
+    AppConfig -> QueryEngineProducer [label = "engine.type", style = dashed, color = brown];
+AppConfig -> QueryCache [label = "TTL settings", style = dashed, color = brown];
+AppConfig -> RateLimiter [label = "rate limits", style = dashed, color = brown];
+EnvVars -> AppConfig [label = "override", style = dashed, color = brown];
+
+// ========================================
+ // LEGEND
+ // ========================================
+    subgraph cluster_legend {
+label = "Legend";
+style = "rounded,filled";
+fillcolor = "white";
+fontsize = 12;
+
+legend_implemented [label = "Implemented", fillcolor = "lightyellow", style = "rounded,filled"];
+legend_future [label = "Future/WIP", fillcolor = "lightgray", style = "rounded,filled,dashed"];
+legend_interface [label = "Interface/Abstract", fillcolor = "gold", shape = box3d];
+legend_dataflow [label = "Data Flow", color = "red", penwidth = 2, style = solid, shape = plaintext];
+legend_config [label = "Configuration", color = "brown", style = dashed, shape = plaintext];
+
+legend_implemented -> legend_future [style = invis];
+legend_interface -> legend_dataflow [style = invis];
+legend_config [style = invis];
+}
+
+// Layout hints
+    {rank = same; CLI; REST_Client; Arrow_Client; Web_UI}
+{rank = same; QueryResourceV1; BatchQueryResource; MetadataResourceV1}
+{rank = same; RateLimiter; AuditLogger; Auth}
+{rank = same; DuckDBEngine; PostgreSQLEngine; CustomEngine}
+}

@@ -1,0 +1,160 @@
+tamarind:
+  engine:
+    type: duckdb
+    database-path: ":memory:"
+    duckdb:
+      access-mode: read_write
+      threads: 4
+      install-httpfs: true
+      load-httpfs: true
+
+  # OLTP Storage Configuration
+  storage:
+    # Persistent storage backend: sqlite (default), postgresql, mysql
+    oltp-backend: ${TAMARIND_OLTP_BACKEND:sqlite}
+    # Ephemeral storage backend: in-memory (default), redis
+    ephemeral-backend: ${TAMARIND_EPHEMERAL_BACKEND:in-memory}
+
+  data:
+    source: "local:./data"
+
+  query:
+    timeout-seconds: 300
+    max-result-rows: 10000
+    caching-enabled: true
+
+  connection-pool:
+    maximum-pool-size: 10
+    minimum-idle: 2
+    connection-timeout: 30000
+    idle-timeout: 600000
+    max-lifetime: 1800000
+    pool-name: "DuckDBPool"
+
+  cache:
+    file-list-ttl-minutes: 5
+    schema-ttl-minutes: 15
+    query-result-ttl-minutes: 10
+    max-size: 500
+
+  security:
+    rate-limit:
+      enabled: true
+      requests-per-minute: 100
+      capacity: 100
+      refill-tokens: 100
+      refill-period-minutes: 1
+    audit:
+      enabled: true
+
+  arrow:
+    enabled: true
+    host: "0.0.0.0"
+    port: 8815
+    allocator-max-memory: 9223372036854775807
+    tls:
+      enabled: false
+      # certFile:
+      # keyFile:
+
+quarkus:
+  application:
+    name: tamarind
+
+  # Temporarily disable ORM until dependencies settle
+  hibernate-orm:
+    enabled: false
+
+  flyway:
+    migrate-at-start: false
+
+  # OpenAPI and Swagger UI configuration
+  smallrye-openapi:
+    info-title: Tamarind Data Lakehouse API
+    info-version: 0.1.0
+    info-description: A fast and flexible data lakehouse server built with DuckDB and Java. Execute SQL queries, manage metadata, and process batch operations.
+    info-contact-name: CogitatorTech
+    info-contact-url: https://github.com/CogitatorTech/tamarind
+    info-license-name: Apache 2.0 / MIT
+    info-license-url: https://github.com/CogitatorTech/tamarind/blob/main/LICENSE-APACHE
+
+  swagger-ui:
+    enable: true
+    always-include: true
+
+  health:
+    openapi:
+      included: true
+
+  micrometer:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
+        path: /metrics
+
+  http:
+    port: 8080
+    cors: true
+    access-log:
+      enabled: true
+    limits:
+      max-body-size: 100M
+      max-header-size: 64K
+      max-chunk-size: 8K
+    ssl:
+      certificate:
+      # Configure if enabling REST TLS
+      # key-store-file: server-keystore.p12
+      # key-store-password: changeit
+      # key-store-file-type: PKCS12
+
+  vertx:
+    max-event-loop-execute-time: 30s
+
+  resteasy-reactive:
+    output-buffer-size: 8192
+
+  scheduler:
+    enabled: true
+
+  log:
+    level: INFO
+    category:
+      "io.github.cogitatortech.tamarind":
+        level: DEBUG
+      "io.github.cogitatortech.tamarind.security":
+        level: DEBUG
+      "AUDIT":
+        level: INFO
+    console:
+      enable: true
+      format: "%d{HH:mm:ss} %-5p [%c{2.}] (%t) %s%e%n"
+
+  # Remove or disable the conflicting embedded security configuration
+  # security:
+  #   users:
+  #     embedded:
+  #       enabled: true
+  #       plain-text: true
+  #       users:
+  #         admin: admin123
+  #         user: user123
+  #       roles:
+  #         admin: admin
+  #         user: user
+
+  oidc:
+    enabled: false
+    # auth-server-url:
+    # client-id:
+    # credentials:
+    #   secret:
+
+  opentelemetry:
+    enabled: false
+    tracer:
+      exporter: otlp
+    exporter:
+      otlp:
+        endpoint: http://localhost:4317

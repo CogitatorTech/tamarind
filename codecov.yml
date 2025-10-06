@@ -1,0 +1,5 @@
+# See https://docs.codecov.io/docs/codecov-yaml for details.
+
+ignore:
+  - "src/test/**/*"
+  - "docs/**"

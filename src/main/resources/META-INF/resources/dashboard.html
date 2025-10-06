@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Tamarind Dashboard</title>
+  <link rel="icon" type="image/png" href="/assets/logos/logo.png">
+  <link rel="apple-touch-icon" href="/assets/logos/logo.png">
+  <link rel="shortcut icon" type="image/png" href="/assets/logos/logo.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f7fa;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+    }
+
+    .user-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: white;
+      color: #667eea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .role-badge {
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Main Layout */
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 250px;
+      background: white;
+      border-right: 1px solid #e1e8ed;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #333;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: #f8f9fa;
+    }
+
+    .nav-item.active {
+      background: #f0f2ff;
+      border-left-color: #667eea;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .nav-icon {
+      font-size: 20px;
+      width: 24px;
+      text-align: center;
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* Dashboard Cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      color: #666;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .card-icon {
+      font-size: 24px;
+      color: #667eea;
+    }
+
+    .card-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .card-label {
+      font-size: 14px;
+      color: #999;
+    }
+
+    /* Table Styles */
+    .table-container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 20px;
+      border-bottom: 1px solid #e1e8ed;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: #f8f9fa;
+    }
+
+    th, td {
+      padding: 12px 20px;
+      text-align: left;
+      border-bottom: 1px solid #e1e8ed;
+    }
+
+    th {
+      font-weight: 600;
+      color: #666;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    td {
+      color: #333;
+    }
+
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: #667eea;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-right: 5px;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed #ddd;
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: #fafafa;
+    }
+
+    .upload-area:hover {
+      border-color: #667eea;
+      background: #f0f2ff;
+    }
+
+    .upload-area.drag-over {
+      border-color: #667eea;
+      background: #f0f2ff;
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e1e8ed;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0;
+      transition: width 0.3s;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-active {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-inactive {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Alert Messages */
+    .alert {
+      padding: 15px 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .alert.show {
+      display: block;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    /* Config Display */
+    .config-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px;
+      border-bottom: 1px solid #e1e8ed;
+    }
+
+    .config-item:last-child {
+      border-bottom: none;
+    }
+
+    .config-key {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .config-value {
+      color: #333;
+      font-family: 'Monaco', 'Courier New', monospace;
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+  </style>
+  <script defer src="/assets/js/utils.js"></script>
+  <script defer src="/assets/js/error-handler.js"></script>
+  <script defer src="/assets/js/shortcuts.js"></script>
+  <script defer src="/assets/js/api-client.js"></script>
+  <script defer src="/assets/js/dashboard.js"></script>
+</head>
+<body>
+<!-- Header -->
+<div class="header">
+  <h1><img src="/assets/logos/logo.png" alt="Tamarind" style="height:24px; width:24px; vertical-align:middle; margin-right:8px;">Tamarind Dashboard</h1>
+  <div class="header-right">
+    <div class="user-info">
+      <div class="user-avatar" id="userAvatar">U</div>
+      <span id="userName">User</span>
+      <span class="role-badge" id="userRole">USER</span>
+    </div>
+    <button class="btn" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<!-- Main Container -->
+<div class="main-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-item active" data-page="overview" onclick="dashboard.showPage('overview', this)">
+      <span class="nav-icon">📊</span>
+      <span>Overview</span>
+    </div>
+    <div class="nav-item" data-page="users" onclick="dashboard.showPage('users', this)">
+      <span class="nav-icon">👥</span>
+      <span>Users</span>
+    </div>
+    <div class="nav-item" data-page="datasources" onclick="dashboard.showPage('datasources', this)">
+      <span class="nav-icon">💾</span>
+      <span>Data Sources</span>
+    </div>
+    <div class="nav-item" data-page="monitoring" onclick="dashboard.showPage('monitoring', this)">
+      <span class="nav-icon">📈</span>
+      <span>Monitoring</span>
+    </div>
+    <div class="nav-item" data-page="config" onclick="dashboard.showPage('config', this)">
+      <span class="nav-icon">⚙️</span>
+      <span>Configuration</span>
+    </div>
+    <div class="nav-item" onclick="window.location.href='/notebook.html'">
+      <span class="nav-icon">📝</span>
+      <span>SQL Notebook</span>
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="content">
+    <div class="alert" id="alert"></div>
+
+    <!-- Overview Page -->
+    <div class="page active" id="overview-page">
+      <h2 style="margin-bottom: 20px;">System Overview</h2>
+
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Total Users</span>
+            <span class="card-icon">👥</span>
+          </div>
+          <div class="card-value" id="totalUsers">-</div>
+          <div class="card-label">Registered users</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">System Uptime</span>
+            <span class="card-icon">⏱️</span>
+          </div>
+          <div class="card-value" id="systemUptime">-</div>
+          <div class="card-label">Hours</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Memory Usage</span>
+            <span class="card-icon">💾</span>
+          </div>
+          <div class="card-value" id="memoryUsage">-</div>
+          <div class="card-label">Heap memory</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Status</span>
+            <span class="card-icon">✅</span>
+          </div>
+          <div class="card-value" id="systemStatus" style="font-size: 24px; color: #28a745;">RUNNING</div>
+          <div class="card-label">All systems operational</div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <div class="table-header">
+          <h3 class="table-title">System Information</h3>
+        </div>
+        <div style="padding: 20px;">
+          <div class="loading" id="systemInfo">
+            <div class="spinner"></div>
+            Loading system information...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Page -->
+    <div class="page" id="users-page">
+      <h2 style="margin-bottom: 20px;">User Management</h2>
+
+      <div class="table-container">
+        <div class="table-header">
+          <h3 class="table-title">Users</h3>
+          <button class="btn-primary" onclick="refreshUsers()">Refresh</button>
+        </div>
+        <div id="usersTableContainer">
+          <div class="loading">
+            <div class="spinner"></div>
+            Loading users...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Sources Page -->
+    <div class="page" id="datasources-page">
+      <h2 style="margin-bottom: 20px;">Data Sources</h2>
+
+      <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+        <div class="card">
+          <h3 style="margin-bottom: 20px;">Upload File</h3>
+          <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📁</div>
+            <div style="font-size: 16px; color: #333; margin-bottom: 5px;">
+              Click or drag file to upload
+            </div>
+            <div style="font-size: 13px; color: #999;">
+              Supports: Parquet, CSV, JSON (Max 100MB)
+            </div>
+          </div>
+          <input accept=".parquet,.csv,.json" id="fileInput" onchange="handleFileSelect(event)" style="display: none;"
+                 type="file">
+
+          <div class="form-group" style="margin-top: 20px;">
+            <label>Table Name (optional)</label>
+            <input id="uploadTableName" placeholder="my_table" type="text">
+          </div>
+
+          <button class="btn-primary" id="uploadBtn" onclick="uploadFile()" style="width: 100%;">
+            Upload File
+          </button>
+
+          <div class="progress-bar" id="uploadProgress">
+            <div class="progress-fill" id="uploadProgressFill"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom: 20px;">Register S3 Table</h3>
+          <div class="form-group">
+            <label>Table Name *</label>
+            <input id="s3TableName" placeholder="my_s3_table" required type="text">
+          </div>
+          <div class="form-group">
+            <label>S3 Path *</label>
+            <input id="s3Path" placeholder="s3://bucket/path/to/data.parquet" required type="text">
+          </div>
+          <button class="btn-primary" onclick="registerS3Table()" style="width: 100%;">
+            Register S3 Table
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container" style="margin-top: 30px;">
+        <div class="table-header">
+          <h3 class="table-title">Available Tables</h3>
+          <button class="btn-primary" onclick="refreshTables()">Refresh</button>
+        </div>
+        <div id="tablesContainer">
+          <div class="loading">
+            <div class="spinner"></div>
+            Loading tables...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monitoring Page -->
+    <div class="page" id="monitoring-page">
+      <h2 style="margin-bottom: 20px;">System Monitoring</h2>
+
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">JVM Uptime</span>
+            <span class="card-icon">⏰</span>
+          </div>
+          <div class="card-value" id="jvmUptime">-</div>
+          <div class="card-label">Seconds</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Heap Memory</span>
+            <span class="card-icon">📊</span>
+          </div>
+          <div class="card-value" id="heapUsed">-</div>
+          <div class="card-label">MB used / max</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Memory Usage</span>
+            <span class="card-icon">📈</span>
+          </div>
+          <div class="card-value" id="heapPercent">-</div>
+          <div class="card-label">Percentage</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Health Status</span>
+            <span class="card-icon">💚</span>
+          </div>
+          <div class="card-value" id="healthStatus" style="font-size: 24px;">-</div>
+          <div class="card-label" id="healthTimestamp">-</div>
+        </div>
+      </div>
+
+      <div class="table-container" style="margin-top: 30px;">
+        <div class="table-header">
+          <h3 class="table-title">Health Checks</h3>
+          <button class="btn-primary" onclick="refreshMonitoring()">Refresh</button>
+        </div>
+        <div id="healthChecks">
+          <div class="loading">
+            <div class="spinner"></div>
+            Loading health checks...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuration Page -->
+    <div class="page" id="config-page">
+      <h2 style="margin-bottom: 20px;">System Configuration</h2>
+
+      <div class="table-container">
+        <div class="table-header">
+          <h3 class="table-title">Current Configuration</h3>
+          <button class="btn-primary" onclick="refreshConfig()">Refresh</button>
+        </div>
+        <div id="configContainer">
+          <div class="loading">
+            <div class="spinner"></div>
+            Loading configuration...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Thin global wrappers required by UI contract tests and inline onclick handlers
+  function showPage(pageName, el) {
+    if (window.dashboard && typeof dashboard.showPage === 'function') {
+      dashboard.showPage(pageName, el);
+    }
+  }
+  function logout() {
+    if (window.dashboard && typeof dashboard.logout === 'function') {
+      dashboard.logout();
+    } else {
+      // Fallback
+      localStorage.removeItem('tamarind_token');
+      localStorage.removeItem('tamarind_user');
+      window.location.href = '/index.html';
+    }
+  }
+</script>
+</body>
+</html>

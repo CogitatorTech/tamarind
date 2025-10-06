@@ -1,0 +1,3037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Tamarind Notebooks</title>
+  <!-- CodeMirror CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css"/>
+  <link rel="icon" type="image/png" href="/assets/logos/logo.png">
+  <link rel="apple-touch-icon" href="/assets/logos/logo.png">
+  <link rel="shortcut icon" type="image/png" href="/assets/logos/logo.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: white;
+      color: #667eea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Main Layout */
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: white;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .sidebar-section h3 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .table-list {
+      list-style: none;
+    }
+
+    .table-item {
+      padding: 8px 12px;
+      margin: 4px 0;
+      background: #f8f9fa;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .table-item:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+
+    .table-item.hidden {
+      display: none;
+    }
+
+    .table-item.highlight {
+      background: #fff3cd;
+      border-left: 3px solid #ffc107;
+    }
+
+    /* Table Search */
+    .table-search-wrapper {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .table-search-input {
+      width: 100%;
+      padding: 8px 32px 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 13px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .table-search-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .table-search-input::placeholder {
+      color: #adb5bd;
+    }
+
+    .table-search-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      font-size: 14px;
+      color: #adb5bd;
+    }
+
+    .table-search-info {
+      padding: 8px 12px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #6c757d;
+      background: #f8f9fa;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .table-search-info.no-results {
+      color: #dc3545;
+      background: #f8d7da;
+    }
+
+    .table-item mark {
+      background: #ffc107;
+      color: #000;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      background: white;
+      padding: 15px 30px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      gap: 10px;
+    }
+
+    .toolbar button {
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .toolbar button:hover {
+      background: #5568d3;
+      transform: translateY(-1px);
+    }
+
+    .toolbar button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Notebook */
+    .notebook {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+    }
+
+    .cell {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+      .cell-header {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .cell-number {
+        color: #667eea;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .cell-metrics {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        flex: 1;
+        margin-left: 12px;
+      }
+
+      .metric-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        background: #e9ecef;
+        color: #495057;
+        font-weight: 500;
+      }
+
+      .metric-icon {
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      .metric-text {
+        line-height: 1;
+      }
+
+      .metric-badge.metric-time {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .metric-badge.metric-rows {
+        background: #f3e5f5;
+        color: #7b1fa2;
+      }
+
+      .metric-badge.metric-cached {
+        background: #e8f5e9;
+        color: #388e3c;
+      }
+
+      .metric-badge.metric-warning {
+        background: #fff3e0;
+        color: #f57c00;
+      }
+
+      .metric-badge.metric-timestamp {
+        background: #f5f5f5;
+        color: #757575;
+      }
+
+      .metric-badge.status-running {
+        background: #fff3e0;
+        color: #f57c00;
+        animation: pulse-badge 1.5s ease-in-out infinite;
+      }
+
+      @keyframes pulse-badge {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+
+      .cell-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .cell-btn {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      transition: all 0.2s;
+    }
+
+    .cell-btn:hover {
+      background: #e9ecef;
+      color: #333;
+    }
+
+    .cell-input {
+      position: relative;
+    }
+
+    .sql-input {
+      width: 100%;
+      min-height: 100px;
+      padding: 15px;
+      border: none;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 14px;
+      resize: vertical;
+      background: #f8f9fa;
+      line-height: 1.5;
+      outline: none;
+    }
+
+    .sql-input:focus {
+      background: white;
+    }
+
+    /* Syntax highlighting for textarea */
+    .sql-input-wrapper {
+      position: relative;
+    }
+
+    .sql-input-wrapper textarea {
+      position: relative;
+      z-index: 2;
+      background: transparent;
+      color: #333;
+    }
+
+    .cell-output {
+      border-top: 1px solid #ddd;
+      background: #fafafa;
+    }
+
+    .cell-output.error {
+      background: #fff5f5;
+      padding: 15px;
+    }
+
+    .error-container {
+      color: #c33;
+    }
+
+    .error-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #c33;
+    }
+
+    .error-message {
+      background: white;
+      border-left: 4px solid #dc3545;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 13px;
+      color: #721c24;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .error-details {
+      background: white;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      padding: 10px;
+      font-size: 12px;
+      color: #721c24;
+    }
+
+    .error-code {
+      font-weight: 600;
+      color: #c33;
+      margin-bottom: 5px;
+    }
+
+    /* Result Actions Toolbar */
+    .result-actions {
+      background: #f8f9fa;
+      padding: 10px 15px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .result-actions-left {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .result-actions-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #333;
+    }
+
+    .action-btn:hover {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .action-btn.success {
+      background: #28a745;
+      color: white;
+      border-color: #28a745;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .pagination button {
+      padding: 4px 8px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination select {
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+
+    /* Result Table Container */
+    .result-table-container {
+      max-height: 500px;
+      overflow: auto;
+      padding: 15px;
+    }
+
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: white;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .result-table th {
+      background: #667eea;
+      color: white;
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .result-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result-table td.expanded {
+      white-space: normal;
+      word-wrap: break-word;
+    }
+
+    .result-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .result-table td.null-value {
+      color: #999;
+      font-style: italic;
+    }
+
+    .result-table th.clickable-header {
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .result-table th.clickable-header:hover {
+      background: #5568d3;
+    }
+
+    /* Column Statistics Modal */
+    .column-stats-modal {
+      max-width: 900px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #f8f9fa;
+      padding: 16px;
+      border-radius: 8px;
+      border-left: 3px solid #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .stat-value.warning {
+      color: #f57c00;
+    }
+
+    .stats-section {
+      margin: 24px 0;
+    }
+
+    .stats-section h3 {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .histogram {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      height: 200px;
+      background: #f8f9fa;
+      padding: 16px;
+      border-radius: 8px;
+      gap: 4px;
+    }
+
+    .histogram-bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+    }
+
+    .histogram-bar {
+      width: 100%;
+      background: #667eea;
+      border-radius: 4px 4px 0 0;
+      transition: background 0.2s;
+      min-height: 2px;
+    }
+
+    .histogram-bar-wrapper:hover .histogram-bar {
+      background: #5568d3;
+    }
+
+    .histogram-label {
+      font-size: 10px;
+      color: #666;
+      margin-top: 4px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+    }
+
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .stats-table th {
+      background: #f8f9fa;
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      color: #495057;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .stats-table td {
+      padding: 10px;
+      border-bottom: 1px solid #f1f3f5;
+      color: #495057;
+    }
+
+    .stats-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .value-cell {
+      font-family: monospace;
+      font-size: 12px;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .percent-bar-wrapper {
+      position: relative;
+      width: 100%;
+      height: 20px;
+      background: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .percent-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: #667eea;
+      transition: width 0.3s;
+    }
+
+    .percent-text {
+      position: relative;
+      z-index: 1;
+      display: block;
+      text-align: center;
+      line-height: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .result-info {
+      color: #666;
+      font-size: 12px;
+      padding: 10px 15px;
+      background: #f8f9fa;
+      border-top: 1px solid #ddd;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-content h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .modal-content input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .modal-actions button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .modal-actions .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .modal-actions .btn-secondary {
+      background: #e9ecef;
+      color: #333;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #333;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
+      z-index: 2000;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success {
+      background: #28a745;
+    }
+
+    .toast.error {
+      background: #dc3545;
+    }
+
+    .CodeMirror { height: auto; min-height: 100px; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 14px; }
+
+    .history-section { padding: 20px; border-top: 1px solid #eee; }
+    .history-section h3 { font-size: 14px; color: #666; margin-bottom: 10px; text-transform: uppercase; font-weight: 600; }
+    .history-item { padding: 8px 12px; margin: 4px 0; background: #f8f9fa; border-radius: 5px; cursor: pointer; font-size: 12px; color: #333; }
+    .history-item:hover { background: #e9ecef; }
+
+    .columns-menu { position: relative; display: inline-block; }
+    .columns-dropdown { position: absolute; top: 30px; left: 0; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); padding: 10px; z-index: 100; width: 240px; display: none; }
+    .columns-dropdown.show { display: block; }
+    .columns-dropdown label { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; }
+
+    .virtual-body { position: relative; height: 400px; overflow: auto; }
+    .virtual-spacer { width: 1px; }
+  </style>
+</head>
+<body>
+<!-- Header -->
+<div class="header">
+  <h1><img src="/assets/logos/logo.png" alt="Tamarind" style="height:24px; width:24px; vertical-align:middle; margin-right:8px;">Tamarind Notebooks</h1>
+  <div class="header-right">
+    <div class="user-info">
+      <div class="user-avatar" id="userAvatar"></div>
+      <span id="username"></span>
+    </div>
+    <button class="btn" onclick="window.location.href='/dashboard.html'">🏠 Dashboard</button>
+    <button class="btn" onclick="showUsers()">👥 Users</button>
+    <button class="btn" onclick="KeyboardShortcuts.show()">⌨️ Shortcuts</button>
+    <button class="btn" onclick="logout()">🚪 Logout</button>
+  </div>
+</div>
+
+<!-- Main Container -->
+<div class="main-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>📊 Tables</h3>
+      <div class="table-search-wrapper">
+        <input
+          type="search"
+          id="tableSearch"
+          class="table-search-input"
+          placeholder="Search tables..."
+          oninput="filterTables(this.value)"
+          aria-label="Search tables"
+        />
+        <span class="table-search-icon">🔍</span>
+      </div>
+      <ul class="table-list" id="tableList">
+        <li class="loading">Loading tables...</li>
+      </ul>
+      <div class="table-search-info" id="tableSearchInfo" style="display: none;"></div>
+    </div>
+    <div class="sidebar-section">
+      <h3>📝 Quick Queries</h3>
+      <ul class="table-list">
+        <li class="table-item" onclick="insertQuery('SELECT * FROM ')">Show all rows</li>
+        <li class="table-item" onclick="insertQuery('SELECT COUNT(*) FROM ')">Count rows</li>
+        <li class="table-item" onclick="insertQuery('DESCRIBE ')">Describe table</li>
+      </ul>
+    </div>
+    <div class="history-section">
+      <h3>🕘 History</h3>
+      <div id="historyList"><div style="color:#999; font-size:12px;">No history yet</div></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button onclick="showNotebookManager()">📓 Notebooks</button>
+      <button onclick="saveCurrentNotebook()">💾 Save</button>
+      <button onclick="renameNotebook()">✏️ Rename</button>
+      <button onclick="clearNotebook()">🗑️ Clear</button>
+      <button onclick="importNotebook()">📥 Import</button>
+      <button onclick="addCell()">➕ Add Cell</button>
+      <button onclick="runAllCells()">▶️ Run All</button>
+      <button onclick="clearAllOutputs()">🧹 Clear Outputs</button>
+      <button onclick="formatSQL()">🧰 Format SQL</button>
+      <button onclick="runSelection()">↷ Run Selection</button>
+    </div>
+
+    <!-- Notebook -->
+    <div class="notebook" id="notebook">
+      <div class="empty-state">
+        <h2>Welcome to Tamarind Notebooks!</h2>
+        <p>Click "Add Cell" to start writing SQL queries</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Schema Modal -->
+<div class="modal" id="schemaModal">
+  <div class="modal-content">
+    <h2>📄 Table Schema</h2>
+    <div id="schemaContent">Loading...</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSchemaModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Management Modal -->
+<div class="modal" id="userModal">
+  <div class="modal-content">
+    <h2>👥 User Management</h2>
+    <div id="userList"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeUserModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notebook Manager Modal -->
+<div class="modal" id="notebookModal">
+  <div class="modal-content">
+    <h2>📓 Notebook Manager</h2>
+    <div id="notebookList"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="createNewNotebook()">+ New Notebook</button>
+      <button class="btn-secondary" onclick="closeNotebookManager()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shortcuts Modal -->
+<div class="modal" id="shortcutsModal">
+  <div class="modal-content">
+    <h2>⌨️ Keyboard Shortcuts</h2>
+    <div style="font-size:14px; line-height:1.7;">
+      <div><strong>Shift + Enter</strong> — Run current cell</div>
+      <div><strong>Ctrl + Enter</strong> — Run selection (or whole cell if no selection)</div>
+      <div><strong>Ctrl + Space</strong> — Autocomplete</div>
+      <div><strong>?</strong> — Open this shortcuts dialog (when focus is in the editor)</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="document.getElementById('shortcutsModal').classList.remove('active')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let cellCounter = 0;
+  let currentUser = null;
+  let currentNotebook = null; // Current notebook being edited
+  let lastSelectedTable = null; // Remember the last table clicked in the sidebar
+  const cellResults = {}; // Store full results for each cell
+  const notebooks = {}; // Store notebooks in localStorage
+  const editorInstances = {}; // Track per-cell CodeMirror instances for cleanup
+  const HISTORY_LIMIT = 50;
+  let activeCellId = null; // Track currently focused editor cell
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    loadTables();
+    loadNotebooks();
+
+    // Load default notebook or create new one
+    const savedNotebookId = localStorage.getItem('tamarind_current_notebook');
+    if (savedNotebookId && notebooks[savedNotebookId]) {
+      loadNotebook(savedNotebookId);
+    } else {
+      createNewNotebook();
+    }
+
+    // Apply query template from dashboard (if any)
+    try {
+      const template = localStorage.getItem('tamarind_query_template');
+      if (template && template.trim().length > 0) {
+        const cells = document.querySelectorAll('.cell');
+        if (cells.length === 0) addCell();
+        const lastCell = document.querySelectorAll('.cell')[document.querySelectorAll('.cell').length - 1];
+        const ed = editorInstances[lastCell.id];
+        if (ed) { ed.setValue(template); ed.focus(); }
+        localStorage.removeItem('tamarind_query_template');
+      }
+    } catch (e) {
+      // Non-fatal: ignore template errors
+      console.warn('Failed to apply query template:', e);
+    }
+
+    loadHistory();
+  });
+
+  // Toast notification
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `toast ${type} show`;
+    setTimeout(() => {
+      toast.className = 'toast';
+    }, 3000);
+  }
+
+  function checkAuth() {
+    const token = localStorage.getItem('tamarind_token');
+    const user = localStorage.getItem('tamarind_user');
+
+    if (!token || !user) {
+      window.location.href = '/index.html';
+      return;
+    }
+
+    currentUser = JSON.parse(user);
+    document.getElementById('username').textContent = currentUser.username;
+    document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+  }
+
+  function logout() {
+    localStorage.removeItem('tamarind_token');
+    localStorage.removeItem('tamarind_user');
+    window.location.href = '/index.html';
+  }
+
+
+  /**
+   * Data Preview - Shows sample rows on hover
+   */
+  const DataPreview = {
+    timeout: null,
+    cache: {},
+    tooltip: null,
+    currentTable: null,
+
+    show(tableName, element) {
+      clearTimeout(this.timeout);
+      this.currentTable = tableName;
+
+      // Debounce to avoid excessive requests
+      this.timeout = setTimeout(async () => {
+        if (this.currentTable !== tableName) return; // Mouse moved away
+
+        try {
+          const preview = await this.fetchPreview(tableName);
+          if (this.currentTable !== tableName) return; // Mouse moved away during fetch
+
+          this.render(preview, element, tableName);
+        } catch (error) {
+          console.error('Preview error:', error);
+        }
+      }, 500); // 500ms debounce
+    },
+
+    hide() {
+      clearTimeout(this.timeout);
+      this.currentTable = null;
+      if (this.tooltip) {
+        this.tooltip.remove();
+        this.tooltip = null;
+      }
+    },
+
+    async fetchPreview(tableName) {
+      // Check cache first
+      if (this.cache[tableName]) {
+        return this.cache[tableName];
+      }
+
+      const token = localStorage.getItem('tamarind_token');
+      const sql = `SELECT * FROM ${tableName} LIMIT 5`;
+
+      const response = await fetch('/api/v1/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ sql })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch preview');
+      }
+
+      const data = await response.json();
+      const preview = {
+        columns: data.data.columns || [],
+        rows: data.data.rows || [],
+        rowCount: data.metadata?.rowCount || data.data.rows.length
+      };
+
+      // Cache for 5 minutes
+      this.cache[tableName] = preview;
+      setTimeout(() => {
+        delete this.cache[tableName];
+      }, 5 * 60 * 1000);
+
+      return preview;
+    },
+
+    render(preview, element, tableName) {
+      // Remove existing tooltip
+      this.hide();
+
+      // Create tooltip
+      this.tooltip = document.createElement('div');
+      this.tooltip.className = 'data-preview-tooltip';
+
+      const { columns, rows, rowCount } = preview;
+
+      let html = `
+        <div class="preview-header">
+          <strong>${escapeHtml(tableName)}</strong>
+          <span class="preview-count">${rowCount.toLocaleString()} rows</span>
+        </div>
+      `;
+
+      if (rows.length > 0) {
+        html += `
+          <div class="preview-table-wrapper">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  ${columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(row => `
+                  <tr>
+                    ${columns.map(col => {
+                      const val = row[col];
+                      let displayVal = '';
+                      if (val === null || val === undefined) {
+                        displayVal = '<span class="null-value">NULL</span>';
+                      } else if (typeof val === 'object') {
+                        displayVal = '<span class="json-value">{...}</span>';
+                      } else {
+                        const str = String(val);
+                        displayVal = escapeHtml(str.length > 50 ? str.substring(0, 47) + '...' : str);
+                      }
+                      return `<td>${displayVal}</td>`;
+                    }).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else {
+        html += '<div class="preview-empty">No data</div>';
+      }
+
+      html += `
+        <div class="preview-footer">
+          <span>💡 Click to insert query</span>
+        </div>
+      `;
+
+      this.tooltip.innerHTML = html;
+
+      // Position tooltip
+      const rect = element.getBoundingClientRect();
+      const sidebarRect = element.closest('.sidebar').getBoundingClientRect();
+
+      this.tooltip.style.position = 'fixed';
+      this.tooltip.style.left = (sidebarRect.right + 10) + 'px';
+      this.tooltip.style.top = Math.max(10, rect.top) + 'px';
+
+      document.body.appendChild(this.tooltip);
+
+      // Add styles if not present
+      this.addStyles();
+    },
+
+    addStyles() {
+      if (document.getElementById('data-preview-styles')) return;
+
+      const style = document.createElement('style');
+      style.id = 'data-preview-styles';
+      style.textContent = `
+        .data-preview-tooltip {
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+          max-width: 600px;
+          max-height: 400px;
+          overflow: hidden;
+          z-index: 10000;
+          animation: preview-fade-in 0.2s ease-out;
+        }
+
+        @keyframes preview-fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-5px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .preview-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          border-bottom: 1px solid #e9ecef;
+          background: #f8f9fa;
+          border-radius: 8px 8px 0 0;
+        }
+
+        .preview-header strong {
+          font-size: 14px;
+          color: #333;
+          font-weight: 600;
+        }
+
+        .preview-count {
+          font-size: 12px;
+          color: #666;
+          background: white;
+          padding: 2px 8px;
+          border-radius: 12px;
+          border: 1px solid #dee2e6;
+        }
+
+        .preview-table-wrapper {
+          max-height: 280px;
+          overflow: auto;
+        }
+
+        .preview-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 13px;
+        }
+
+        .preview-table th {
+          position: sticky;
+          top: 0;
+          background: #f8f9fa;
+          padding: 8px 12px;
+          text-align: left;
+          font-weight: 600;
+          color: #495057;
+          border-bottom: 2px solid #dee2e6;
+          white-space: nowrap;
+        }
+
+        .preview-table td {
+          padding: 6px 12px;
+          border-bottom: 1px solid #f1f3f5;
+          color: #495057;
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .preview-table tbody tr:hover {
+          background: #f8f9fa;
+        }
+
+        .preview-table .null-value {
+          color: #adb5bd;
+          font-style: italic;
+          font-size: 12px;
+        }
+
+        .preview-table .json-value {
+          color: #667eea;
+          font-family: monospace;
+          font-size: 12px;
+        }
+
+        .preview-empty {
+          padding: 40px;
+          text-align: center;
+          color: #adb5bd;
+          font-size: 13px;
+        }
+
+        .preview-footer {
+          padding: 8px 16px;
+          border-top: 1px solid #e9ecef;
+          background: #f8f9fa;
+          text-align: center;
+          font-size: 12px;
+          color: #6c757d;
+          border-radius: 0 0 8px 8px;
+        }
+
+        .preview-footer span {
+          display: inline-block;
+        }
+      `;
+
+      document.head.appendChild(style);
+    }
+  };
+
+  async function loadTables() {
+    try {
+      const token = localStorage.getItem('tamarind_token');
+      const response = await fetch('/api/v1/datasources/tables', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (response.status === 401) {
+        localStorage.removeItem('tamarind_token');
+        localStorage.removeItem('tamarind_user');
+        window.location.href = '/index.html';
+        return;
+      }
+      const tableList = document.getElementById('tableList');
+      if (!response.ok) { tableList.innerHTML = '<li style="padding:10px;color:#c33;">Error loading tables</li>'; return; }
+      const data = await response.json();
+      const tables = data && data.data ? data.data : [];
+      tableList.innerHTML = '';
+      if (!tables.length) { tableList.innerHTML = '<li style="padding:10px;color:#999;">No tables found</li>'; return; }
+
+      // Update CodeMirror hint tables
+      try { window.__tamarind_tables = {}; tables.forEach(t => { window.__tamarind_tables[t] = []; }); Object.values(editorInstances).forEach(e => { if (e.cm) e.cm.setOption('hintOptions', { tables: window.__tamarind_tables }); }); } catch(_){ }
+
+      tables.forEach(table => {
+        const li = document.createElement('li');
+        li.className = 'table-item';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'tbl-name';
+        nameSpan.style.display = 'block';
+        nameSpan.style.overflow = 'hidden';
+        nameSpan.style.textOverflow = 'ellipsis';
+        nameSpan.style.whiteSpace = 'nowrap';
+        nameSpan.textContent = table;
+        li.appendChild(nameSpan);
+        // Clicking the item inserts a basic SELECT template (does not auto-run)
+        li.addEventListener('click', () => {
+          lastSelectedTable = table;
+          insertQuery(`SELECT *\nFROM ${table} LIMIT 100`);
+        });
+
+        // Add hover preview
+        li.addEventListener('mouseenter', (e) => {
+          DataPreview.show(table, li);
+        });
+        li.addEventListener('mouseleave', () => {
+          DataPreview.hide();
+        });
+
+        tableList.appendChild(li);
+      });
+    } catch (error) {
+      document.getElementById('tableList').innerHTML = '<li style="padding:10px;color:#c33;">Connection error</li>';
+    }
+  }
+
+  /**
+   * Filter tables in sidebar by search query
+   */
+  function filterTables(query) {
+    const tableList = document.getElementById('tableList');
+    const tableItems = tableList.querySelectorAll('.table-item');
+    const searchInfo = document.getElementById('tableSearchInfo');
+
+    if (!tableItems.length) {
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase().trim();
+
+    // If query is empty, show all tables
+    if (!lowerQuery) {
+      tableItems.forEach(item => {
+        item.classList.remove('hidden', 'highlight');
+      });
+      searchInfo.style.display = 'none';
+      return;
+    }
+
+    // Filter and highlight matching tables
+    let visibleCount = 0;
+    let matchCount = 0;
+
+    tableItems.forEach(item => {
+      const tableName = item.textContent.toLowerCase();
+      const matches = tableName.includes(lowerQuery);
+
+      if (matches) {
+        item.classList.remove('hidden');
+        item.classList.add('highlight');
+
+        // Highlight matching text
+        const originalName = item.querySelector('.tbl-name').textContent;
+        const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+        const highlighted = originalName.replace(regex, '<mark>$1</mark>');
+        item.querySelector('.tbl-name').innerHTML = highlighted;
+
+        visibleCount++;
+        matchCount++;
+      } else {
+        item.classList.add('hidden');
+        item.classList.remove('highlight');
+
+        // Restore original text
+        const nameSpan = item.querySelector('.tbl-name');
+        if (nameSpan) {
+          nameSpan.innerHTML = nameSpan.textContent;
+        }
+      }
+    });
+
+    // Update search info
+    if (visibleCount === 0) {
+      searchInfo.textContent = `No tables match "${query}"`;
+      searchInfo.className = 'table-search-info no-results';
+      searchInfo.style.display = 'block';
+    } else if (matchCount === tableItems.length) {
+      searchInfo.style.display = 'none';
+    } else {
+      searchInfo.textContent = `Showing ${matchCount} of ${tableItems.length} tables`;
+      searchInfo.className = 'table-search-info';
+      searchInfo.style.display = 'block';
+    }
+  }
+
+  /**
+   * Escape special regex characters
+   */
+  function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function previewTable(table, autorun = false) {
+    // Ensure a cell exists
+    let cells = document.querySelectorAll('.cell');
+    if (cells.length === 0) addCell();
+    cells = document.querySelectorAll('.cell');
+    const lastCell = cells[cells.length - 1];
+    const ed = editorInstances[lastCell.id];
+    const sql = `SELECT *\nFROM ${table} LIMIT 100`;
+    if (ed) { ed.setValue(sql); ed.focus(); }
+    if (autorun) { runSqlOnCell(lastCell.id, sql); }
+  }
+
+  async function showTableSchema(table) {
+    const modal = document.getElementById('schemaModal');
+    const content = document.getElementById('schemaContent');
+    content.innerHTML = 'Loading...';
+    modal.classList.add('active');
+    try {
+      const token = localStorage.getItem('tamarind_token');
+      const resp = await fetch('/api/v1/query', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ sql: `DESCRIBE ${table}` }) });
+      const txt = await resp.text();
+      let payload = null; try { payload = JSON.parse(txt); } catch(_){}
+      if (!resp.ok || !payload || !payload.data) { content.innerHTML = '<div style="color:#c33;">Failed to load schema</div>'; return; }
+      const result = payload.data;
+      const rows = Array.isArray(result.rows) ? result.rows : [];
+      const columns = Array.isArray(result.columns) ? result.columns : (rows[0] ? Object.keys(rows[0]) : []);
+      // cache columns for hints if possible
+      try {
+        const lowerCols = columns.map(c => String(c).toLowerCase());
+        let nameKey = columns[lowerCols.indexOf('column_name')];
+        if (!nameKey) nameKey = columns[lowerCols.indexOf('name')];
+        if (!nameKey) nameKey = columns[0]; // fallback to first column
+
+        let typeKey = columns[lowerCols.indexOf('column_type')];
+        if (!typeKey) typeKey = columns[lowerCols.indexOf('type')];
+        if (!typeKey) typeKey = columns[1]; // fallback to second column
+
+        const derivedCols = rows.map(r => r[nameKey]).filter(Boolean);
+        if (!window.__tamarind_tables) window.__tamarind_tables = {};
+        window.__tamarind_tables[table] = derivedCols;
+        Object.values(editorInstances).forEach(e => { if (e.cm) e.cm.setOption('hintOptions', { tables: window.__tamarind_tables }); });
+      } catch(_){ }
+
+      let html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">\n<thead><tr><th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">Column</th><th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">Type</th></tr></thead><tbody>';
+
+      // Derive keys for rendering
+      const lowerCols = columns.map(c => String(c).toLowerCase());
+      let nameKey = columns[lowerCols.indexOf('column_name')];
+      if (!nameKey) nameKey = columns[lowerCols.indexOf('name')];
+      if (!nameKey) nameKey = columns[0];
+
+      let typeKey = columns[lowerCols.indexOf('column_type')];
+      if (!typeKey) typeKey = columns[lowerCols.indexOf('type')];
+      if (!typeKey) typeKey = columns[1];
+
+      rows.forEach(row => {
+        const name = row[nameKey];
+        const type = row[typeKey];
+        html += `<tr><td style="padding:6px; border-bottom:1px solid #f2f2f2;">${escapeHtml(String(name))}</td><td style="padding:6px; border-bottom:1px solid #f2f2f2; color:#666;">${escapeHtml(String(type))}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      content.innerHTML = html;
+    } catch (e) {
+      content.innerHTML = '<div style="color:#c33;">Error loading schema</div>';
+    }
+  }
+
+  // History
+  function historyKey(){ return `tamarind_history_${currentNotebook ? currentNotebook.id : 'default'}`; }
+  function saveToHistory(sql){ try { const key = historyKey(); let list = JSON.parse(localStorage.getItem(key) || '[]'); list.unshift({ sql, t: Date.now() }); list = list.slice(0, HISTORY_LIMIT); localStorage.setItem(key, JSON.stringify(list)); renderHistory(); } catch(_){} }
+  function loadHistory(){ renderHistory(); }
+  function renderHistory(){
+    const key = historyKey(); let list = [];
+    try { list = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_){}
+    const el = document.getElementById('historyList'); if (!el) return;
+    if (!list.length){ el.innerHTML = '<div style="color:#999; font-size:12px;">No history yet</div>'; return;}
+    let html = '';
+    list.slice(0,20).forEach((h,i)=>{
+      const display = (h.sql || '').split('\n')[0];
+      const sqlJson = JSON.stringify(h.sql);
+      html += `<div class="history-item" title="${escapeHtml(h.sql)}" onclick="insertQuery(${sqlJson})" ondblclick="insertQuery(${sqlJson})">${escapeHtml(display).slice(0,60)}${display.length>60?'…':''}</div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  // Extend toolbar with Format and Run Selection
+  document.addEventListener('DOMContentLoaded', () => {
+    // ...existing init code...
+    loadHistory();
+  });
+
+  function formatSQL() {
+    try {
+      const cells = document.querySelectorAll('.cell');
+      if (cells.length === 0) return;
+      const lastCell = cells[cells.length - 1];
+      const ed = editorInstances[lastCell.id];
+      if (!ed) return;
+      const sql = ed.getValue();
+      if (!sql || !window.sqlFormatter) return;
+      const formatted = window.sqlFormatter.format(sql, { language: 'sql' });
+      ed.setValue(formatted);
+      ed.focus();
+      showToast('SQL formatted', 'success');
+    } catch (e) { showToast('Format failed', 'error'); }
+  }
+
+  function runSelection() {
+    const cells = document.querySelectorAll('.cell');
+    if (cells.length === 0) return;
+    const lastCell = cells[cells.length - 1];
+    const ed = editorInstances[lastCell.id];
+    if (!ed) return;
+    const cm = ed.cm; const sel = cm ? cm.getSelection() : '';
+    const sql = (sel && sel.trim().length > 0) ? sel : ed.getValue();
+    if (!sql.trim()) return;
+    // Temporarily run as a separate cell output on the same cell
+    runSqlOnCell(lastCell.id, sql);
+  }
+
+  // Run helper that accepts explicit SQL (used by runSelection)
+  async function runSqlOnCell(cellId, sql) {
+    const cell = document.getElementById(cellId);
+    const existingOutput = cell.querySelector('.cell-output');
+    if (existingOutput) existingOutput.remove();
+
+    // Update cell header to show running state
+    updateCellMetrics(cellId, { status: 'running' });
+
+    const output = document.createElement('div');
+    output.className = 'cell-output';
+    output.innerHTML = '<div class="loading">⏳ Executing query...</div>';
+    cell.appendChild(output);
+    try {
+      const token = localStorage.getItem('tamarind_token');
+      const startTime = Date.now();
+      const response = await fetch('/api/v1/query', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ sql }) });
+      if (response.status === 401) { localStorage.removeItem('tamarind_token'); localStorage.removeItem('tamarind_user'); window.location.href = '/index.html'; return; }
+      const fallbackTime = Date.now() - startTime;
+      const responseText = await response.text();
+      let data = null; const ct = response.headers.get('content-type') || '';
+      if (ct.includes('application/json')) { try { data = JSON.parse(responseText); } catch(parseErr){ output.className='cell-output error'; output.innerHTML = `<div class="error-container"><div class="error-header"><span>❌ Response parse error</span></div><div class="error-message">${escapeHtml(parseErr.message)}</div></div>`; return; } }
+      else { output.className='cell-output error'; output.innerHTML = `<div class="error-container"><div class="error-header"><span>❌ Unexpected response</span></div><div class="error-message">${escapeHtml(ct)}</div></div>`; return; }
+      const metadata = (data && data.metadata) ? data.metadata : {};
+      if (response.ok && data && data.data) {
+        const result = data.data;
+        cellResults[cellId] = {
+          columns: result.columns,
+          rows: result.rows,
+          executionTime: typeof metadata.executionTimeMs==='number'?metadata.executionTimeMs:fallbackTime,
+          executedAt: new Date(),
+          sql: sql,
+          meta: { rowCount: metadata.rowCount, cached: metadata.cached, truncated: metadata.truncated },
+          hiddenColumns: (cellResults[cellId] && cellResults[cellId].hiddenColumns) || new Set()
+        };
+        saveToHistory(sql);
+        updateCellMetrics(cellId);
+        if (result.rows && result.rows.length > 0) renderResults(cellId, result); else output.innerHTML = `<div style="padding: 20px; color: #666;">✓ Query executed successfully (0 rows)</div>`;
+      } else {
+        output.className='cell-output error'; const errMsg = (data && data.error && (data.error.message || data.error.details)) ? `${data.error.message || ''} ${data.error.details || ''}`.trim() : `Query execution failed (HTTP ${response.status})`; output.innerHTML = `<div class="error-container"><div class="error-header"><span>❌ Error</span></div><div class="error-message">${escapeHtml(errMsg)}</div></div>`;
+      }
+    } catch (error) { output.className='cell-output error'; output.innerHTML = `<div class="error-container"><div class="error-header"><span>❌ Error</span></div><div class="error-message">Connection error: ${escapeHtml(error.message)}</div></div>`; }
+  }
+
+  // Show/hide the columns dropdown menu; ensure only one menu is open
+  function toggleColumnsMenu(btn, cellId){
+    const menu = btn.parentElement.querySelector('.columns-dropdown');
+    document.querySelectorAll('.columns-dropdown').forEach(m=>{ if(m!==menu) m.classList.remove('show'); });
+    menu.classList.toggle('show');
+  }
+
+  /**
+   * Update cell metrics display (execution time, row count, cache status, timestamp)
+   */
+  function updateCellMetrics(cellId, options = {}) {
+    const cell = document.getElementById(cellId);
+    if (!cell) return;
+
+    let header = cell.querySelector('.cell-header');
+    if (!header) return;
+
+    // Remove existing metrics
+    let metricsBar = header.querySelector('.cell-metrics');
+    if (metricsBar) metricsBar.remove();
+
+    // Create metrics bar
+    metricsBar = document.createElement('div');
+    metricsBar.className = 'cell-metrics';
+
+    if (options.status === 'running') {
+      metricsBar.innerHTML = `
+        <span class="metric-badge status-running">
+          <span class="metric-icon">⏳</span>
+          <span class="metric-text">Running...</span>
+        </span>
+      `;
+    } else {
+      const saved = cellResults[cellId];
+      if (saved) {
+        const badges = [];
+
+        // Execution time
+        if (typeof saved.executionTime === 'number') {
+          const timeStr = saved.executionTime < 1000
+            ? `${saved.executionTime}ms`
+            : `${(saved.executionTime / 1000).toFixed(2)}s`;
+          badges.push(`
+            <span class="metric-badge metric-time" title="Execution time">
+              <span class="metric-icon">⏱️</span>
+              <span class="metric-text">${timeStr}</span>
+            </span>
+          `);
+        }
+
+        // Row count
+        if (saved.rows && saved.rows.length > 0) {
+          badges.push(`
+            <span class="metric-badge metric-rows" title="Rows returned">
+              <span class="metric-icon">📊</span>
+              <span class="metric-text">${saved.rows.length.toLocaleString()} rows</span>
+            </span>
+          `);
+        }
+
+        // Cache indicator
+        if (saved.meta && saved.meta.cached) {
+          badges.push(`
+            <span class="metric-badge metric-cached" title="Result from cache">
+              <span class="metric-icon">💾</span>
+              <span class="metric-text">cached</span>
+            </span>
+          `);
+        }
+
+        // Truncated indicator
+        if (saved.meta && saved.meta.truncated) {
+          badges.push(`
+            <span class="metric-badge metric-warning" title="Results were truncated">
+              <span class="metric-icon">⚠️</span>
+              <span class="metric-text">truncated</span>
+            </span>
+          `);
+        }
+
+        // Time ago
+        if (saved.executedAt) {
+          const timeAgo = formatTimeAgo(saved.executedAt);
+          badges.push(`
+            <span class="metric-badge metric-timestamp" title="Executed at ${saved.executedAt.toLocaleString()}">
+              <span class="metric-icon">🕐</span>
+              <span class="metric-text">${timeAgo}</span>
+            </span>
+          `);
+        }
+
+        metricsBar.innerHTML = badges.join('');
+      }
+    }
+
+    // Insert metrics bar after cell number
+    const cellNumber = header.querySelector('.cell-number');
+    if (cellNumber) {
+      cellNumber.after(metricsBar);
+    } else {
+      header.insertBefore(metricsBar, header.firstChild);
+    }
+  }
+
+  /**
+   * Format timestamp as relative time (e.g., "2 minutes ago")
+   */
+  function formatTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+
+    if (seconds < 10) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+
+    return date.toLocaleDateString();
+  }
+
+  // Simple visualization: picks nominal X and quantitative Y if available; falls back to counts
+  /**
+   * Enhanced Chart Builder - Show modal with presets and configuration
+   */
+  async function visualizeResult(cellId){
+    const saved = cellResults[cellId];
+    if (!saved || !saved.rows || saved.rows.length === 0) {
+      TamarindUtils.showToast('No data to visualize', 'error');
+      return;
+    }
+
+    ChartBuilder.show(cellId, saved);
+  }
+
+  /**
+   * Chart Builder - Visual presets and drag & drop configuration
+   */
+  const ChartBuilder = {
+    currentCellId: null,
+    currentData: null,
+    currentSpec: null,
+
+    presets: {
+      bar: {
+        name: 'Bar Chart',
+        icon: '📊',
+        description: 'Compare categories',
+        mark: 'bar',
+        suggestedX: 'nominal',
+        suggestedY: 'quantitative'
+      },
+      line: {
+        name: 'Line Chart',
+        icon: '📈',
+        description: 'Show trends over time',
+        mark: 'line',
+        suggestedX: 'temporal',
+        suggestedY: 'quantitative'
+      },
+      scatter: {
+        name: 'Scatter Plot',
+        icon: '🔵',
+        description: 'Show correlation',
+        mark: 'point',
+        suggestedX: 'quantitative',
+        suggestedY: 'quantitative'
+      },
+      heatmap: {
+        name: 'Heatmap',
+        icon: '🔥',
+        description: 'Show density',
+        mark: 'rect',
+        suggestedX: 'nominal',
+        suggestedY: 'nominal',
+        color: 'quantitative'
+      },
+      area: {
+        name: 'Area Chart',
+        icon: '📉',
+        description: 'Show filled trends',
+        mark: 'area',
+        suggestedX: 'temporal',
+        suggestedY: 'quantitative'
+      },
+      histogram: {
+        name: 'Histogram',
+        icon: '📐',
+        description: 'Show distribution',
+        mark: 'bar',
+        suggestedX: 'quantitative',
+        bin: true
+      }
+    },
+
+    show(cellId, data) {
+      this.currentCellId = cellId;
+      this.currentData = data;
+
+      // Create or get modal
+      let modal = document.getElementById('chartBuilderModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'chartBuilderModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+          <div class="modal-overlay" onclick="ChartBuilder.close()"></div>
+          <div class="modal-content chart-builder-modal">
+            <div class="modal-header">
+              <h2>📊 Chart Builder</h2>
+              <button class="modal-close" onclick="ChartBuilder.close()">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="chart-builder-layout">
+                <div class="chart-presets">
+                  <h3>Choose Chart Type</h3>
+                  <div id="chartPresets"></div>
+                </div>
+                <div class="chart-config">
+                  <h3>Configure Axes</h3>
+                  <div class="axis-config">
+                    <div class="axis-group">
+                      <label>X-Axis</label>
+                      <select id="chartXAxis" onchange="ChartBuilder.updateChart()">
+                        <option value="">Select column...</option>
+                      </select>
+                    </div>
+                    <div class="axis-group">
+                      <label>Y-Axis</label>
+                      <select id="chartYAxis" onchange="ChartBuilder.updateChart()">
+                        <option value="">Select column...</option>
+                      </select>
+                    </div>
+                    <div class="axis-group" id="chartColorGroup" style="display:none;">
+                      <label>Color</label>
+                      <select id="chartColor" onchange="ChartBuilder.updateChart()">
+                        <option value="">None</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="chart-actions">
+                    <button class="btn btn-primary" onclick="ChartBuilder.apply()">Apply Chart</button>
+                    <button class="btn" onclick="ChartBuilder.close()">Cancel</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-preview">
+                <h3>Preview</h3>
+                <div id="chartPreviewContainer"></div>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        this.addStyles();
+      }
+
+      modal.classList.add('active');
+      this.renderPresets();
+      this.populateColumns();
+      this.selectPreset('bar'); // Default to bar chart
+    },
+
+    close() {
+      const modal = document.getElementById('chartBuilderModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    },
+
+    renderPresets() {
+      const container = document.getElementById('chartPresets');
+      container.innerHTML = Object.entries(this.presets).map(([key, preset]) => `
+        <div class="preset-card ${key === 'bar' ? 'active' : ''}" onclick="ChartBuilder.selectPreset('${key}')" data-preset="${key}">
+          <div class="preset-icon">${preset.icon}</div>
+          <div class="preset-name">${preset.name}</div>
+          <div class="preset-desc">${preset.description}</div>
+        </div>
+      `).join('');
+    },
+
+    populateColumns() {
+      const cols = this.currentData.columns || [];
+      const xAxis = document.getElementById('chartXAxis');
+      const yAxis = document.getElementById('chartYAxis');
+      const colorSelect = document.getElementById('chartColor');
+
+      cols.forEach(col => {
+        xAxis.innerHTML += `<option value="${escapeHtml(col)}">${escapeHtml(col)}</option>`;
+        yAxis.innerHTML += `<option value="${escapeHtml(col)}">${escapeHtml(col)}</option>`;
+        colorSelect.innerHTML += `<option value="${escapeHtml(col)}">${escapeHtml(col)}</option>`;
+      });
+    },
+
+    selectPreset(presetKey) {
+      // Update UI
+      document.querySelectorAll('.preset-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.preset === presetKey);
+      });
+
+      const preset = this.presets[presetKey];
+      this.currentPreset = presetKey;
+
+      // Auto-select appropriate columns
+      const cols = this.currentData.columns || [];
+      const rows = this.currentData.rows || [];
+
+      // Detect column types
+      const numericCols = [];
+      const nonNumericCols = [];
+      const temporalCols = [];
+
+      rows.slice(0, 50).forEach(row => {
+        cols.forEach(c => {
+          const v = row[c];
+          if (v === null || v === undefined) return;
+          if (typeof v === 'number' && !numericCols.includes(c)) {
+            numericCols.push(c);
+          } else if (!nonNumericCols.includes(c)) {
+            const asDate = new Date(v);
+            if (!isNaN(asDate.getTime()) && String(v).match(/\d{4}-\d{2}-\d{2}/)) {
+              if (!temporalCols.includes(c)) temporalCols.push(c);
+            } else {
+              nonNumericCols.push(c);
+            }
+          }
+        });
+      });
+
+      // Select appropriate columns based on preset
+      const xAxis = document.getElementById('chartXAxis');
+      const yAxis = document.getElementById('chartYAxis');
+      const colorGroup = document.getElementById('chartColorGroup');
+
+      if (preset.suggestedX === 'nominal') {
+        xAxis.value = nonNumericCols[0] || cols[0] || '';
+      } else if (preset.suggestedX === 'quantitative') {
+        xAxis.value = numericCols[0] || cols[0] || '';
+      } else if (preset.suggestedX === 'temporal') {
+        xAxis.value = temporalCols[0] || cols[0] || '';
+      }
+
+      if (preset.suggestedY === 'quantitative') {
+        yAxis.value = numericCols[0] || (numericCols.length > 1 ? numericCols[1] : cols[1]) || '';
+      } else if (preset.suggestedY === 'nominal') {
+        yAxis.value = nonNumericCols[0] || cols[1] || '';
+      }
+
+      // Show/hide color selector for heatmap
+      colorGroup.style.display = preset.color ? 'block' : 'none';
+
+      this.updateChart();
+    },
+
+    updateChart() {
+      const preset = this.presets[this.currentPreset];
+      const xCol = document.getElementById('chartXAxis').value;
+      const yCol = document.getElementById('chartYAxis').value;
+      const colorCol = document.getElementById('chartColor').value;
+
+      if (!xCol) {
+        document.getElementById('chartPreviewContainer').innerHTML = '<div class="chart-placeholder">Select X-axis column to see preview</div>';
+        return;
+      }
+
+      const rows = this.currentData.rows || [];
+      const data = rows.slice(0, 500); // Limit to 500 rows for preview
+
+      let spec = {
+        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        data: { values: data },
+        mark: preset.mark,
+        encoding: {}
+      };
+
+      // Build encoding based on preset
+      if (preset.bin) {
+        // Histogram
+        spec.encoding.x = { field: xCol, type: 'quantitative', bin: true };
+        spec.encoding.y = { aggregate: 'count', type: 'quantitative' };
+      } else if (preset.color && yCol) {
+        // Heatmap
+        spec.encoding.x = { field: xCol, type: 'nominal' };
+        spec.encoding.y = { field: yCol, type: 'nominal' };
+        if (colorCol) {
+          spec.encoding.color = { field: colorCol, type: 'quantitative', aggregate: 'mean' };
+        } else {
+          spec.encoding.color = { aggregate: 'count', type: 'quantitative' };
+        }
+      } else {
+        // Standard charts
+        const xType = this.detectType(data, xCol);
+        spec.encoding.x = { field: xCol, type: xType };
+
+        if (yCol) {
+          const yType = this.detectType(data, yCol);
+          spec.encoding.y = { field: yCol, type: yType };
+        } else {
+          // Count if no Y column
+          spec.encoding.y = { aggregate: 'count', type: 'quantitative' };
+        }
+      }
+
+      // Add width/height for better preview
+      spec.width = 500;
+      spec.height = 300;
+
+      this.currentSpec = spec;
+
+      // Render preview
+      const container = document.getElementById('chartPreviewContainer');
+      container.innerHTML = '<div class="loading">Rendering chart...</div>';
+
+      if (window.vegaEmbed) {
+        vegaEmbed(container, spec, { actions: false }).catch(error => {
+          container.innerHTML = '<div class="error-message">Failed to render chart</div>';
+          console.error('Chart error:', error);
+        });
+      } else {
+        container.innerHTML = '<div class="error-message">Vega libraries not loaded</div>';
+      }
+    },
+
+    detectType(data, column) {
+      const sample = data.slice(0, 50).map(row => row[column]).filter(v => v !== null && v !== undefined);
+      if (sample.length === 0) return 'nominal';
+
+      const firstValue = sample[0];
+      if (typeof firstValue === 'number') return 'quantitative';
+
+      // Check for date strings
+      if (String(firstValue).match(/\d{4}-\d{2}-\d{2}/)) {
+        const asDate = new Date(firstValue);
+        if (!isNaN(asDate.getTime())) return 'temporal';
+      }
+
+      return 'nominal';
+    },
+
+    apply() {
+      if (!this.currentSpec) {
+        TamarindUtils.showToast('Please configure the chart', 'error');
+        return;
+      }
+
+      // Add chart to cell output
+      const output = document.getElementById(this.currentCellId).querySelector('.cell-output');
+      const container = document.createElement('div');
+      container.className = 'chart-container';
+      container.style.padding = '20px';
+      container.style.background = '#f8f9fa';
+      container.style.borderRadius = '8px';
+      container.style.marginTop = '16px';
+
+      output.appendChild(container);
+
+      if (window.vegaEmbed) {
+        vegaEmbed(container, this.currentSpec, { actions: true });
+      }
+
+      this.close();
+      TamarindUtils.showToast('Chart added successfully', 'success');
+    },
+
+    addStyles() {
+      if (document.getElementById('chart-builder-styles')) return;
+
+      const style = document.createElement('style');
+      style.id = 'chart-builder-styles';
+      style.textContent = `
+        .chart-builder-modal {
+          max-width: 1200px;
+          max-height: 90vh;
+          overflow-y: auto;
+        }
+
+        .chart-builder-layout {
+          display: grid;
+          grid-template-columns: 300px 1fr;
+          gap: 24px;
+          margin-bottom: 24px;
+          padding-bottom: 24px;
+          border-bottom: 1px solid #e9ecef;
+        }
+
+        .chart-presets {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .chart-presets h3, .chart-config h3, .chart-preview h3 {
+          margin: 0 0 12px 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #495057;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .preset-card {
+          padding: 12px;
+          background: #f8f9fa;
+          border: 2px solid transparent;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .preset-card:hover {
+          background: #e9ecef;
+          transform: translateX(5px);
+        }
+
+        .preset-card.active {
+          background: white;
+          border-color: #667eea;
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+
+        .preset-icon {
+          font-size: 32px;
+          margin-bottom: 8px;
+        }
+
+        .preset-name {
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 4px;
+        }
+
+        .preset-desc {
+          font-size: 12px;
+          color: #6c757d;
+        }
+
+        .axis-config {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+
+        .axis-group label {
+          display: block;
+          font-size: 13px;
+          font-weight: 600;
+          color: #495057;
+          margin-bottom: 6px;
+        }
+
+        .axis-group select {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #dee2e6;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+
+        .axis-group select:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .chart-actions {
+          display: flex;
+          gap: 12px;
+        }
+
+        .chart-preview {
+          padding: 16px;
+          background: #f8f9fa;
+          border-radius: 8px;
+        }
+
+        #chartPreviewContainer {
+          min-height: 350px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: white;
+          border-radius: 6px;
+          padding: 16px;
+        }
+
+        .chart-placeholder {
+          color: #adb5bd;
+          text-align: center;
+          font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+          .chart-builder-layout {
+            grid-template-columns: 1fr;
+          }
+        }
+      `;
+
+      document.head.appendChild(style);
+    }
+  };
+
+  function renderResults(cellId, result, page = 1, pageSize = 50) {
+    const output = document.getElementById(cellId).querySelector('.cell-output');
+    output.innerHTML = '';
+    if (!result || !result.rows || result.rows.length === 0) {
+      output.innerHTML = `<div style="padding: 20px; color: #666;">✓ Query executed successfully (0 rows)</div>`;
+      return;
+    }
+
+    const saved = cellResults[cellId] || {}; const execTime = typeof saved.executionTime==='number'?saved.executionTime:null; const meta = saved.meta || {};
+    const totalRows = result.rows.length;
+    const hiddenSet = (cellResults[cellId] && cellResults[cellId].hiddenColumns) || new Set();
+    const allCols = result.columns || [];
+    const visibleCols = allCols.filter(c => !hiddenSet.has(c));
+
+    // Actions toolbar
+    let html = `
+      <div class="result-actions">
+        <div class="result-actions-left">
+          <button class="action-btn" onclick="copyToClipboard('${cellId}', 'table')">📋 Copy Table</button>
+          <button class="action-btn" onclick="copyToClipboard('${cellId}', 'csv')">📋 Copy CSV</button>
+          <button class="action-btn" onclick="exportData('${cellId}', 'csv')">💾 Export CSV</button>
+          <button class="action-btn" onclick="exportData('${cellId}', 'json')">💾 Export JSON</button>
+          <button class="action-btn" onclick="exportData('${cellId}', 'sql')">💾 Export SQL</button>
+          <button class="action-btn" onclick="visualizeResult('${cellId}')">📈 Visualize</button>
+          <div class="columns-menu">
+            <button class="action-btn" onclick="toggleColumnsMenu(this, '${cellId}')">🧩 Columns</button>
+            <div class="columns-dropdown">
+              ${allCols.map((c)=>`<label><input type="checkbox" ${hiddenSet.has(c)?'':'checked'} onchange="toggleColumn('${cellId}', '${c}', this.checked)">${escapeHtml(c)}</label>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="result-actions-right">
+          <div class="pagination">
+            <span>Rows per page</span>
+            <select onchange="changePageSize('${cellId}', this.value)">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+              <option value="500">500</option>
+              <option value="${totalRows}">All</option>
+            </select>
+            <button onclick="changePage('${cellId}', ${Math.max(1, page-1)}, ${pageSize})" ${page<=1?'disabled':''}>◀</button>
+            <span>Page ${page} of ${Math.max(1, Math.ceil(totalRows / pageSize))}</span>
+            <button onclick="changePage('${cellId}', ${page+1}, ${pageSize})" ${page>=Math.ceil(totalRows / pageSize)?'disabled':''}>▶</button>
+          </div>
+        </div>
+      </div>`;
+
+    // Table rendering
+    const useVirtual = pageSize >= totalRows && totalRows > 2000;
+    html += `<div class="result-table-container">`;
+    if (useVirtual) {
+      html += `<table class="result-table"><thead><tr>${visibleCols.map(c=>`<th class="clickable-header" onclick="showColumnStats('${cellId}', '${escapeHtml(c)}')" title="Click to see column statistics">${escapeHtml(c)}</th>`).join('')}</tr></thead></table>`;
+      html += `<div class="virtual-body" onscroll="onVirtualScroll(event, '${cellId}')"><div class="virtual-spacer" id="spacer-${cellId}"></div><table class="result-table" style="position:absolute; left:0; right:0;"><tbody id="vbody-${cellId}"></tbody></table></div>`;
+    } else {
+      const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+      const startIdx = (page - 1) * pageSize;
+      const endIdx = Math.min(startIdx + pageSize, totalRows);
+      const paginatedRows = result.rows.slice(startIdx, endIdx);
+      html += `<table class="result-table"><thead><tr>${visibleCols.map(c=>`<th class="clickable-header" onclick="showColumnStats('${cellId}', '${escapeHtml(c)}')" title="Click to see column statistics">${escapeHtml(c)}</th>`).join('')}</tr></thead><tbody>`;
+      paginatedRows.forEach(row => { html += '<tr>'; visibleCols.forEach(col => { const value = row[col]; const isNull = value===null||value===undefined; const cls = isNull?'null-value':''; const dv = isNull?'NULL':escapeHtml(String(value)); html += `<td class="${cls}" title="${dv}" ondblclick="toggleExpand(this)">${dv}</td>`; }); html += '</tr>'; });
+      html += `</tbody></table>`;
+      html += `</div>`;
+      const badges=[]; if(meta.cached) badges.push('cached'); if(meta.truncated) badges.push('truncated'); html += `<div class="result-info">✓ ${totalRows} rows returned${execTime!==null?` in ${execTime}ms`:''}${badges.length?` • ${badges.join(' • ')}`:''}${totalRows>pageSize?` (showing ${paginatedRows.length})`:''}</div>`;
+      output.innerHTML = html; return;
+    }
+    html += `</div>`;
+    const badges=[]; if(meta.cached) badges.push('cached'); if(meta.truncated) badges.push('truncated'); html += `<div class="result-info">✓ ${totalRows} rows returned${execTime!==null?` in ${execTime}ms`:''}${badges.length?` • ${badges.join(' • ')}`:''}</div>`;
+    output.innerHTML = html;
+
+    if (useVirtual) {
+      setupVirtualTable(cellId, result, visibleCols);
+    }
+  }
+
+  function toggleColumn(cellId, col, visible){
+    const hidden = (cellResults[cellId].hiddenColumns ||= new Set());
+    if (visible) hidden.delete(col); else hidden.add(col);
+    const res = { columns: cellResults[cellId].columns, rows: cellResults[cellId].rows };
+    renderResults(cellId, res);
+  }
+
+  /**
+   * Show column statistics in a modal
+   */
+  async function showColumnStats(cellId, columnName) {
+    const saved = cellResults[cellId];
+    if (!saved || !saved.rows || !saved.sql) {
+      TamarindUtils.showToast('No data available for statistics', 'error');
+      return;
+    }
+
+    // Create or get modal
+    let modal = document.getElementById('columnStatsModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'columnStatsModal';
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div class="modal-overlay" onclick="closeColumnStatsModal()"></div>
+        <div class="modal-content column-stats-modal">
+          <div class="modal-header">
+            <h2 id="statsColumnName"></h2>
+            <button class="modal-close" onclick="closeColumnStatsModal()">×</button>
+          </div>
+          <div class="modal-body" id="statsContent">
+            <div class="loading">Computing statistics...</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    // Show modal with loading state
+    modal.classList.add('active');
+    document.getElementById('statsColumnName').textContent = `Column: ${columnName}`;
+    document.getElementById('statsContent').innerHTML = '<div class="loading">⏳ Computing statistics...</div>';
+
+    try {
+      // Compute statistics from the result data
+      const rows = saved.rows;
+      const values = rows.map(r => r[columnName]);
+
+      const stats = computeColumnStatistics(columnName, values);
+
+      renderColumnStats(stats);
+    } catch (error) {
+      document.getElementById('statsContent').innerHTML = `
+        <div class="error-message">
+          <span class="error-icon">⚠️</span>
+          <span>Error computing statistics: ${escapeHtml(error.message)}</span>
+        </div>
+      `;
+    }
+  }
+
+  function closeColumnStatsModal() {
+    const modal = document.getElementById('columnStatsModal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+
+  /**
+   * Compute statistics for a column
+   */
+  function computeColumnStatistics(columnName, values) {
+    const stats = {
+      columnName,
+      total: values.length,
+      nullCount: 0,
+      distinctCount: 0,
+      type: 'unknown',
+      min: null,
+      max: null,
+      mean: null,
+      median: null,
+      mode: null,
+      histogram: null,
+      topValues: []
+    };
+
+    // Count nulls
+    const nonNullValues = values.filter(v => v !== null && v !== undefined);
+    stats.nullCount = values.length - nonNullValues.length;
+    stats.nullPercent = ((stats.nullCount / stats.total) * 100).toFixed(1);
+
+    if (nonNullValues.length === 0) {
+      stats.type = 'null';
+      return stats;
+    }
+
+    // Determine type
+    const firstNonNull = nonNullValues[0];
+    if (typeof firstNonNull === 'number') {
+      stats.type = 'numeric';
+    } else if (typeof firstNonNull === 'boolean') {
+      stats.type = 'boolean';
+    } else if (firstNonNull instanceof Date || !isNaN(Date.parse(firstNonNull))) {
+      stats.type = 'date';
+    } else {
+      stats.type = 'string';
+    }
+
+    // Distinct count
+    const distinct = new Set(nonNullValues.map(v => String(v)));
+    stats.distinctCount = distinct.size;
+    stats.distinctPercent = ((stats.distinctCount / nonNullValues.length) * 100).toFixed(1);
+
+    // Type-specific statistics
+    if (stats.type === 'numeric') {
+      const numbers = nonNullValues.filter(v => typeof v === 'number' && !isNaN(v));
+      if (numbers.length > 0) {
+        stats.min = Math.min(...numbers);
+        stats.max = Math.max(...numbers);
+        stats.mean = (numbers.reduce((a, b) => a + b, 0) / numbers.length).toFixed(2);
+
+        // Median
+        const sorted = [...numbers].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        stats.median = sorted.length % 2 === 0
+          ? ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2)
+          : sorted[mid].toFixed(2);
+
+        // Simple histogram (10 bins)
+        stats.histogram = createHistogram(numbers, 10);
+      }
+    } else if (stats.type === 'string' || stats.type === 'boolean') {
+      // Min/max by length for strings
+      if (stats.type === 'string') {
+        const lengths = nonNullValues.map(v => String(v).length);
+        stats.minLength = Math.min(...lengths);
+        stats.maxLength = Math.max(...lengths);
+        stats.avgLength = (lengths.reduce((a, b) => a + b, 0) / lengths.length).toFixed(1);
+      }
+
+      // Top values
+      const valueCounts = {};
+      nonNullValues.forEach(v => {
+        const key = String(v);
+        valueCounts[key] = (valueCounts[key] || 0) + 1;
+      });
+
+      stats.topValues = Object.entries(valueCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([value, count]) => ({
+          value,
+          count,
+          percent: ((count / nonNullValues.length) * 100).toFixed(1)
+        }));
+
+      // Mode
+      if (stats.topValues.length > 0) {
+        stats.mode = stats.topValues[0].value;
+      }
+    }
+
+    return stats;
+  }
+
+  /**
+   * Create histogram data
+   */
+  function createHistogram(numbers, bins = 10) {
+    const min = Math.min(...numbers);
+    const max = Math.max(...numbers);
+    const range = max - min;
+    const binWidth = range / bins;
+
+    const histogram = Array(bins).fill(0);
+    numbers.forEach(num => {
+      let binIndex = Math.floor((num - min) / binWidth);
+      if (binIndex === bins) binIndex = bins - 1; // Edge case for max value
+      histogram[binIndex]++;
+    });
+
+    return histogram.map((count, i) => ({
+      binStart: (min + i * binWidth).toFixed(2),
+      binEnd: (min + (i + 1) * binWidth).toFixed(2),
+      count
+    }));
+  }
+
+  /**
+   * Render column statistics in the modal
+   */
+  function renderColumnStats(stats) {
+    const content = document.getElementById('statsContent');
+
+    let html = `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Rows</div>
+          <div class="stat-value">${stats.total.toLocaleString()}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Non-Null</div>
+          <div class="stat-value">${(stats.total - stats.nullCount).toLocaleString()}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Null Count</div>
+          <div class="stat-value ${stats.nullCount > 0 ? 'warning' : ''}">${stats.nullCount.toLocaleString()} (${stats.nullPercent}%)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Distinct Values</div>
+          <div class="stat-value">${stats.distinctCount.toLocaleString()} (${stats.distinctPercent}%)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Data Type</div>
+          <div class="stat-value">${stats.type}</div>
+        </div>
+    `;
+
+    if (stats.type === 'numeric' && stats.min !== null) {
+      html += `
+        <div class="stat-card">
+          <div class="stat-label">Min</div>
+          <div class="stat-value">${stats.min}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Max</div>
+          <div class="stat-value">${stats.max}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Mean</div>
+          <div class="stat-value">${stats.mean}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Median</div>
+          <div class="stat-value">${stats.median}</div>
+        </div>
+      `;
+    } else if (stats.type === 'string') {
+      html += `
+        <div class="stat-card">
+          <div class="stat-label">Min Length</div>
+          <div class="stat-value">${stats.minLength}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Max Length</div>
+          <div class="stat-value">${stats.maxLength}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Length</div>
+          <div class="stat-value">${stats.avgLength}</div>
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+
+    // Histogram for numeric columns
+    if (stats.type === 'numeric' && stats.histogram) {
+      const maxCount = Math.max(...stats.histogram.map(b => b.count));
+      html += `
+        <div class="stats-section">
+          <h3>Distribution</h3>
+          <div class="histogram">
+            ${stats.histogram.map(bin => `
+              <div class="histogram-bar-wrapper">
+                <div class="histogram-bar" style="height: ${(bin.count / maxCount * 100)}%"
+                     title="${bin.binStart} - ${bin.binEnd}: ${bin.count} values"></div>
+                <div class="histogram-label">${parseFloat(bin.binStart).toFixed(0)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Top values
+    if (stats.topValues && stats.topValues.length > 0) {
+      html += `
+        <div class="stats-section">
+          <h3>Top Values</h3>
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>Value</th>
+                <th>Count</th>
+                <th>Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${stats.topValues.map(item => `
+                <tr>
+                  <td class="value-cell">${escapeHtml(String(item.value).substring(0, 50))}${String(item.value).length > 50 ? '...' : ''}</td>
+                  <td>${item.count.toLocaleString()}</td>
+                  <td>
+                    <div class="percent-bar-wrapper">
+                      <div class="percent-bar" style="width: ${item.percent}%"></div>
+                      <span class="percent-text">${item.percent}%</span>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    content.innerHTML = html;
+  }
+
+  function setupVirtualTable(cellId, result, visibleCols){
+    const rowHeight = 28; // px approximation
+    const total = result.rows.length;
+    const body = document.getElementById(`vbody-${cellId}`);
+    const spacer = document.getElementById(`spacer-${cellId}`);
+    spacer.style.height = `${total * rowHeight}px`;
+    const container = spacer.parentElement; // virtual-body
+
+    function renderWindow(){
+      const scrollTop = container.scrollTop;
+      const height = container.clientHeight;
+      const start = Math.max(0, Math.floor(scrollTop / rowHeight) - 10);
+      const visibleCount = Math.ceil(height / rowHeight) + 20;
+      const end = Math.min(total, start + visibleCount);
+      const top = start * rowHeight;
+      let html = '';
+      for (let i = start; i < end; i++) {
+        const row = result.rows[i];
+        html += '<tr>' + visibleCols.map(col => {
+          const value = row[col]; const isNull = value===null||value===undefined; const cls = isNull?'null-value':''; const dv = isNull?'NULL':escapeHtml(String(value)); return `<td class="${cls}" title="${dv}">${dv}</td>`;
+        }).join('') + '</tr>';
+      }
+      body.style.transform = `translateY(${top}px)`;
+      body.innerHTML = html;
+    }
+    container._vhandler = renderWindow;
+    renderWindow();
+  }
+  function onVirtualScroll(e, cellId){ const c = e.currentTarget; if (typeof c._vhandler === 'function') c._vhandler(); }
+
+  // Simple HTML escape utility
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
+  }
+
+  // Programmatically insert SQL into the last cell and focus it
+  function insertQuery(sql) {
+    let targetCellId = activeCellId;
+    if (!targetCellId || !editorInstances[targetCellId]) {
+      const cells = document.querySelectorAll('.cell');
+      if (cells.length === 0) addCell();
+      const lastCell = document.querySelectorAll('.cell')[document.querySelectorAll('.cell').length - 1];
+      targetCellId = lastCell.id;
+    }
+    const ed = editorInstances[targetCellId];
+    if (ed) {
+      ed.setValue(sql || '');
+      // Ensure the editor refreshes to render syntax highlighting after programmatic updates
+      try { if (ed.cm && typeof ed.cm.refresh === 'function') { setTimeout(() => ed.cm.refresh(), 0); } } catch(_){}
+      setTimeout(() => ed.focus(), 0);
+    } else {
+      const cell = document.getElementById(targetCellId);
+      const ta = cell ? cell.querySelector('.sql-input') : null;
+      if (ta) { ta.value = sql || ''; ta.focus(); }
+    }
+  }
+
+  // Expand/Collapse cell value on double click
+  function toggleExpand(td) {
+    td.classList.toggle('expanded');
+  }
+
+  // Pagination helpers for results
+  function changePage(cellId, page, pageSize) {
+    const saved = cellResults[cellId];
+    if (!saved) return;
+    const result = { columns: saved.columns, rows: saved.rows };
+    const p = Math.max(1, Number(page) || 1);
+    const s = Math.max(1, Number(pageSize) || 50);
+    renderResults(cellId, result, p, s);
+  }
+  function changePageSize(cellId, size) { changePage(cellId, 1, size); }
+
+  // Add a new cell with CodeMirror editor
+  function addCell() {
+    const notebook = document.getElementById('notebook');
+    const emptyState = notebook.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    cellCounter++;
+    const cellId = `cell-${cellCounter}`;
+
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.id = cellId;
+    cell.innerHTML = `
+      <div class="cell-header">
+        <div class="cell-number">In [${cellCounter}]:</div>
+        <div class="cell-actions">
+          <button class="cell-btn" onclick="runCell('${cellId}')" title="Run">▶️</button>
+          <button class="cell-btn" onclick="deleteCell('${cellId}')" title="Delete">🗑️</button>
+        </div>
+      </div>
+      <div class="cell-input">
+        <textarea class="sql-input" placeholder="Enter SQL query..."></textarea>
+      </div>`;
+
+    notebook.appendChild(cell);
+    initCellEditor(cell);
+    if (editorInstances[cell.id]) editorInstances[cell.id].focus();
+  }
+
+  // Return editor value for a given cellId
+  function getEditorValue(cellId) {
+    const ed = editorInstances[cellId];
+    if (ed && typeof ed.getValue === 'function') return ed.getValue();
+    const cell = document.getElementById(cellId);
+    const textarea = cell ? cell.querySelector('.sql-input') : null;
+    return textarea ? textarea.value : '';
+  }
+
+  // Run currently focused cell using its editor value
+  function runCell(cellId) {
+    const sql = getEditorValue(cellId);
+    if (!sql || !sql.trim()) return;
+    runSqlOnCell(cellId, sql);
+  }
+
+  // Run all cells sequentially with a small delay
+  async function runAllCells() {
+    const cells = document.querySelectorAll('.cell');
+    for (const cell of cells) {
+      await runCell(cell.id);
+      await new Promise(r => setTimeout(r, 100));
+    }
+  }
+
+  // Clear all outputs in the notebook
+  function clearAllOutputs() {
+    document.querySelectorAll('.cell-output').forEach(o => o.remove());
+  }
+
+  // Delete a cell and dispose its editor to avoid leaks
+  function deleteCell(cellId) {
+    const ed = editorInstances[cellId];
+    if (ed) {
+      try { ed.dispose(); } catch (_) {}
+      delete editorInstances[cellId];
+    }
+    if (cellResults[cellId]) delete cellResults[cellId];
+    const cell = document.getElementById(cellId);
+    if (cell) cell.remove();
+
+    const notebook = document.getElementById('notebook');
+    if (notebook.querySelectorAll('.cell').length === 0) {
+      notebook.innerHTML = `
+        <div class="empty-state">
+          <h2>Welcome to Tamarind Notebooks!</h2>
+          <p>Click "Add Cell" to start writing SQL queries</p>
+        </div>`;
+    }
+  }
+
+  // Clear whole notebook and dispose all editors
+  function clearNotebook() {
+    // Dispose all editors to prevent memory leaks
+    Object.values(editorInstances).forEach(inst => { try { inst.dispose(); } catch (_) {} });
+    for (const k in editorInstances) delete editorInstances[k];
+
+    if (!confirm('Clear all cells? This will reset the notebook.')) return;
+
+    cellCounter = 0;
+    const notebookEl = document.getElementById('notebook');
+    notebookEl.innerHTML = '';
+    Object.keys(cellResults).forEach(key => delete cellResults[key]);
+
+    if (currentNotebook) {
+      currentNotebook.cells = [];
+      currentNotebook.modified = new Date().toISOString();
+      try { localStorage.setItem('tamarind_notebooks', JSON.stringify(notebooks)); } catch (_) {}
+    }
+
+    addCell();
+    showToast('Notebook cleared', 'success');
+  }
+
+  // Enhance CodeMirror keybindings
+  function initCellEditor(cell) {
+    const textarea = cell.querySelector('.sql-input'); if (!textarea) return;
+    const cm = CodeMirror.fromTextArea(textarea, { mode:'text/x-sql', lineNumbers:true, theme:'eclipse', lineWrapping:true, styleActiveLine:true, extraKeys:{ 'Shift-Enter': () => runCell(cell.id), 'Ctrl-Space': 'autocomplete', 'Ctrl-Enter': () => runSelection() }, hintOptions:{ tables: window.__tamarind_tables || {} } });
+    cm.on('focus', () => { activeCellId = cell.id; });
+    cm.on('change', () => {});
+    editorInstances[cell.id] = { cm, dispose: () => { try { cm.toTextArea(); } catch(e){} }, setValue: (v)=>cm.setValue(v||''), getValue: ()=>cm.getValue(), focus: ()=>cm.focus() };
+  }
+
+  // Notebook persistence helpers
+  function persistNotebooks() { try { localStorage.setItem('tamarind_notebooks', JSON.stringify(notebooks)); } catch(_){} }
+  function loadNotebooks() {
+    try {
+      const raw = localStorage.getItem('tamarind_notebooks');
+      const parsed = raw ? JSON.parse(raw) : {};
+      Object.keys(parsed || {}).forEach(k => notebooks[k] = parsed[k]);
+      // Set current notebook if saved, else create one lazily
+      const currentId = localStorage.getItem('tamarind_current_notebook');
+      if (currentId && notebooks[currentId]) {
+        currentNotebook = notebooks[currentId];
+      }
+    } catch(_) {}
+  }
+
+  function renderNotebookCells(cells) {
+    // Dispose editors but do not prompt
+    Object.values(editorInstances).forEach(inst => { try { inst.dispose(); } catch(_){} });
+    for (const k in editorInstances) delete editorInstances[k];
+    const notebookEl = document.getElementById('notebook');
+    notebookEl.innerHTML = '';
+    cellCounter = 0;
+    (cells || []).forEach(c => { addCell(); const last = document.querySelectorAll('.cell'); const cell = last[last.length - 1]; const ed = editorInstances[cell.id]; if (ed) ed.setValue(c.sql || ''); });
+    if ((cells || []).length === 0) {
+      notebookEl.innerHTML = '<div class="empty-state"><h2>Welcome to Tamarind Notebooks!</h2><p>Click "Add Cell" to start writing SQL queries</p></div>';
+    }
+  }
+
+  function loadNotebook(id) {
+    const nb = notebooks[id]; if (!nb) return;
+    currentNotebook = nb; localStorage.setItem('tamarind_current_notebook', id);
+    renderNotebookCells(nb.cells || []);
+    showToast(`Loaded notebook: ${nb.name}`, 'success');
+  }
+
+  function createNewNotebook() {
+    const id = `nb_${Date.now()}`;
+    const name = `Untitled ${Object.keys(notebooks).length + 1}`;
+    const nb = { id, name, created: new Date().toISOString(), modified: new Date().toISOString(), cells: [] };
+    notebooks[id] = nb; currentNotebook = nb; localStorage.setItem('tamarind_current_notebook', id); persistNotebooks();
+    renderNotebookCells([]); addCell();
+    showToast('New notebook created', 'success');
+    renderNotebookList();
+  }
+
+  function saveCurrentNotebook() {
+    if (!currentNotebook) { showToast('No notebook selected', 'error'); return; }
+    const cells = Array.from(document.querySelectorAll('.cell')).map(cell => {
+      const ed = editorInstances[cell.id]; return { sql: ed ? ed.getValue() : (cell.querySelector('.sql-input')?.value || '') };
+    });
+    currentNotebook.cells = cells; currentNotebook.modified = new Date().toISOString(); notebooks[currentNotebook.id] = currentNotebook; persistNotebooks();
+    showToast('Notebook saved', 'success');
+  }
+
+  function renameNotebook() {
+    if (!currentNotebook) { showToast('No notebook selected', 'error'); return; }
+    const name = prompt('Notebook name', currentNotebook.name || 'Untitled'); if (!name) return;
+    currentNotebook.name = name; currentNotebook.modified = new Date().toISOString(); notebooks[currentNotebook.id] = currentNotebook; persistNotebooks();
+    showToast('Notebook renamed', 'success');
+    renderNotebookList();
+  }
+
+  function showNotebookManager() {
+    renderNotebookList();
+    const modal = document.getElementById('notebookModal'); modal.classList.add('active');
+  }
+  function closeNotebookManager() { document.getElementById('notebookModal').classList.remove('active'); }
+
+  function renderNotebookList() {
+    const listEl = document.getElementById('notebookList'); if (!listEl) return;
+    const ids = Object.keys(notebooks);
+    if (ids.length === 0) { listEl.innerHTML = '<div style="color:#999;">No notebooks yet</div>'; return; }
+    let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+    ids.forEach(id => {
+      const nb = notebooks[id];
+      html += `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; border:1px solid #eee; padding:8px; border-radius:6px;">
+        <div>
+          <div style="font-weight:600;">${escapeHtml(nb.name || id)}</div>
+          <div style="font-size:12px; color:#666;">Modified: ${escapeHtml(nb.modified || '')}</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" style="padding:6px 10px;" onclick="loadNotebook('${id}')">Open</button>
+          <button class="btn" style="padding:6px 10px; background:#dc3545; border-color:#dc3545;" onclick="deleteNotebook('${id}')">Delete</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    listEl.innerHTML = html;
+  }
+
+  function deleteNotebook(id) {
+    if (!confirm('Delete this notebook?')) return; const wasCurrent = currentNotebook && currentNotebook.id === id; delete notebooks[id]; persistNotebooks();
+    if (wasCurrent) { currentNotebook = null; localStorage.removeItem('tamarind_current_notebook'); renderNotebookCells([]); }
+    renderNotebookList();
+  }
+
+  function importNotebook() {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = 'application/json';
+    input.onchange = (e) => {
+      const file = e.target.files && e.target.files[0]; if (!file) return;
+      const reader = new FileReader(); reader.onload = () => {
+        try { const obj = JSON.parse(reader.result); const id = `nb_${Date.now()}`; const name = obj.name || file.name.replace(/\.json$/,''); const cells = Array.isArray(obj.cells) ? obj.cells : (Array.isArray(obj) ? obj : []);
+          notebooks[id] = { id, name, created: new Date().toISOString(), modified: new Date().toISOString(), cells: cells.map(c => ({ sql: (typeof c === 'string' ? c : (c.sql || '')) })) };
+          persistNotebooks(); loadNotebook(id); showToast('Notebook imported', 'success'); }
+        catch(err){ showToast('Invalid JSON', 'error'); }
+      }; reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  // Users modal
+  async function showUsers() {
+    const modal = document.getElementById('userModal'); const list = document.getElementById('userList'); list.innerHTML = '<div class="loading">Loading users...</div>';
+    modal.classList.add('active');
+    try {
+      const token = localStorage.getItem('tamarind_token');
+      const resp = await fetch('/api/v1/auth/users', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!resp.ok) { list.innerHTML = '<div style="color:#c33;">Failed to load users</div>'; return; }
+      const data = await resp.json(); const users = data.data || [];
+      if (!users.length) { list.innerHTML = '<div style="color:#666;">No users</div>'; return; }
+      let html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">\n<thead><tr><th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">Username</th><th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">Role</th></tr></thead><tbody>';
+      users.forEach(u => { html += `<tr><td style=\"padding:6px; border-bottom:1px solid #f2f2f2;\">${escapeHtml(u.username)}</td><td style=\"padding:6px; border-bottom:1px solid #f2f2f2; color:#666;\">${escapeHtml(u.role || 'USER')}</td></tr>`; });
+      html += '</tbody></table>'; list.innerHTML = html;
+    } catch(_) { list.innerHTML = '<div style="color:#c33;">Error loading users</div>'; }
+  }
+  function closeUserModal(){ document.getElementById('userModal').classList.remove('active'); }
+
+  // Schema modal close
+  function closeSchemaModal(){ document.getElementById('schemaModal').classList.remove('active'); }
+
+  // Shortcuts modal close
+  function closeShortcutsModal(){ document.getElementById('shortcutsModal').classList.remove('active'); }
+
+  // Clipboard and export utilities
+  function copyToClipboard(cellId, format) {
+    const saved = cellResults[cellId]; if (!saved) { showToast('Nothing to copy', 'error'); return; }
+    let text = '';
+    const cols = saved.columns; const rows = saved.rows;
+    if (format === 'csv') {
+      text += cols.map(csvEscape).join(',') + '\n';
+      rows.forEach(r => { text += cols.map(c => csvEscape(r[c])).join(',') + '\n'; });
+    } else { // table -> TSV for easy paste
+      text += cols.join('\t') + '\n';
+      rows.forEach(r => { text += cols.map(c => String(r[c] ?? '')).join('\t') + '\n'; });
+    }
+    navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard','success')).catch(()=>showToast('Copy failed','error'));
+  }
+  function exportData(cellId, format) {
+    const saved = cellResults[cellId]; if (!saved) { showToast('Nothing to export', 'error'); return; }
+    const cols = saved.columns; const rows = saved.rows;
+    let blob; let filename = `result_${cellId}.${format}`;
+    if (format === 'csv') {
+      let text = cols.map(csvEscape).join(',') + '\n'; rows.forEach(r => { text += cols.map(c => csvEscape(r[c])).join(',') + '\n'; });
+      blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+    } else if (format === 'json') {
+      blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
+    } else if (format === 'sql') {
+      // Generate a simple INSERT script (best-effort)
+      const table = lastSelectedTable || 'my_table';
+      const values = rows.map(r => `(${cols.map(c => sqlValue(r[c])).join(', ')})`).join(',\n');
+      const sql = `INSERT INTO ${table} (${cols.join(', ')})\nVALUES\n${values};\n`;
+      blob = new Blob([sql], { type: 'text/sql' });
+    } else { showToast('Unsupported export', 'error'); return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }
+  function csvEscape(v){ if (v==null) return ''; const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+  function sqlValue(v){ if (v==null) return 'NULL'; if (typeof v === 'number') return String(v); const s = String(v).replace(/'/g, "''"); return `'${s}'`; }
+
+  // Shortcuts
+  function showShortcuts(){ document.getElementById('shortcutsModal').classList.add('active'); }
+  // Open shortcuts with '?' when an editor is focused
+  document.addEventListener('keydown', (e) => {
+    const isEditorFocused = !!activeCellId && document.activeElement && document.activeElement.closest && document.activeElement.closest('.CodeMirror');
+    if (isEditorFocused && e.key === '?') { e.preventDefault(); showShortcuts(); }
+  });
+</script>
+
+<!-- Shortcuts Manager -->
+<script src="/assets/js/shortcuts.js"></script>
+
+<!-- CodeMirror JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/sql-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<!-- SQL Formatter -->
+<script src="https://cdn.jsdelivr.net/npm/sql-formatter@15.4.7/dist/sql-formatter.min.js"></script>
+<!-- Vega for visualization -->
+<script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</body>
+</html>
