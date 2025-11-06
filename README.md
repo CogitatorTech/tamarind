@@ -12,7 +12,7 @@
 [![Docs](https://img.shields.io/badge/docs-read-007ec6?style=flat&labelColor=282c34&logo=readthedocs)](docs)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-007ec6?style=flat&labelColor=282c34&logo=open-source-initiative)](https://github.com/CogitatorTech/tamarind)
 
-Unified data-access to local and remote data sources
+A lightweight analytics server with a lot of features
 
 </div>
 
