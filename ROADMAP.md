@@ -10,7 +10,7 @@ It outlines features to be implemented and their current status.
 
 ## 1. Query Engine Support
 
-* **DuckDB Engine**
+* **DuckDB**
     * [x] Basic query execution via JDBC
     * [x] Connection pooling with HikariCP
     * [x] View creation from file paths
@@ -18,9 +18,9 @@ It outlines features to be implemented and their current status.
     * [x] Parquet, CSV, and JSON file support
     * [x] In-memory and persistent database modes
     * [x] Connection pool initialization and management
-    * [x] Thread-safe transaction management (RequestScoped)
-    * [x] Analytical query engine interface
-    * [x] Fixed URL parameter handling (PRAGMA-based configuration)
+    * [x] Thread-safe transaction management
+    * [x] Analytical query engine interface implementation
+    * [x] URL parameter handling
     * [x] Connection pool health checks with query validation
     * [ ] DuckDB extensions management API
     * [ ] Custom aggregate functions registration
