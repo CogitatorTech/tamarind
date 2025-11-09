@@ -44,7 +44,7 @@ public class TypedMetadataResource {
       var sb = new StringBuilder();
       sb.append('{').append("\"data\":");
       sb.append('[');
-      for (int i=0;i<cols.size();i++) {
+      for (int i = 0; i < cols.size(); i++) {
         var c = cols.get(i);
         sb.append('{');
         sb.append("\"name\":\"").append(escapeJson(c.getName())).append('\"');
@@ -52,7 +52,7 @@ public class TypedMetadataResource {
           sb.append(',').append("\"type\":\"").append(escapeJson(c.getType())).append('\"');
         }
         sb.append('}');
-        if (i < cols.size()-1) sb.append(',');
+        if (i < cols.size() - 1) sb.append(',');
       }
       sb.append(']').append('}');
       return Response.ok(sb.toString()).build();
@@ -86,49 +86,64 @@ public class TypedMetadataResource {
             .build();
       }
       // Simple JSON streaming using StreamingOutput
-      jakarta.ws.rs.core.StreamingOutput out = os -> {
-        try (var conn = ((io.github.cogitatortech.tamarind.engine.JdbcQueryEngine) engine).getJdbcConnection();
-             var stmt = conn.createStatement()) {
-          // get columns
-          var cols = engine.getMetadata().getColumnsWithTypes(table);
-          os.write('{');
-          os.write("\"columns\":".getBytes());
-          os.write('[');
-          for (int i=0;i<cols.size();i++){
-            var c=cols.get(i);
-            String colJson = String.format("{\"name\":\"%s\",\"type\":\"%s\"}", escapeJson(c.getName()), escapeJson(String.valueOf(c.getType())));
-            os.write(colJson.getBytes());
-            if (i<cols.size()-1) os.write(',');
-          }
-          os.write(']');
-          // counts
-          var rs = stmt.executeQuery("SELECT COUNT(*) as cnt FROM " + table);
-          long total = 0; if (rs.next()) total = rs.getLong(1); rs.close();
-          String counts = String.format(",\"rowCount\":%d", total);
-          os.write(counts.getBytes());
-          // sample
-          rs = stmt.executeQuery("SELECT * FROM " + table + " LIMIT 100");
-          var md = rs.getMetaData(); int cc = md.getColumnCount();
-          os.write(",\"sample\":[".getBytes());
-          boolean first=true;
-          while(rs.next()){
-            if(!first) os.write(','); first=false;
-            os.write('{');
-            for(int i=1;i<=cc;i++){
-              String name = md.getColumnLabel(i);
-              Object val = rs.getObject(i);
-              os.write(('\"'+escapeJson(name)+'\"'+':').getBytes());
-              if (val==null) os.write("null".getBytes());
-              else if (val instanceof Number || val instanceof Boolean) os.write(String.valueOf(val).getBytes());
-              else { os.write(('\"'+escapeJson(String.valueOf(val))+'\"').getBytes()); }
-              if (i<cc) os.write(',');
+      jakarta.ws.rs.core.StreamingOutput out =
+          os -> {
+            try (var conn =
+                    ((io.github.cogitatortech.tamarind.engine.JdbcQueryEngine) engine)
+                        .getJdbcConnection();
+                var stmt = conn.createStatement()) {
+              // get columns
+              var cols = engine.getMetadata().getColumnsWithTypes(table);
+              os.write('{');
+              os.write("\"columns\":".getBytes());
+              os.write('[');
+              for (int i = 0; i < cols.size(); i++) {
+                var c = cols.get(i);
+                String colJson =
+                    String.format(
+                        "{\"name\":\"%s\",\"type\":\"%s\"}",
+                        escapeJson(c.getName()), escapeJson(String.valueOf(c.getType())));
+                os.write(colJson.getBytes());
+                if (i < cols.size() - 1) os.write(',');
+              }
+              os.write(']');
+              // counts
+              var rs = stmt.executeQuery("SELECT COUNT(*) as cnt FROM " + table);
+              long total = 0;
+              if (rs.next()) total = rs.getLong(1);
+              rs.close();
+              String counts = String.format(",\"rowCount\":%d", total);
+              os.write(counts.getBytes());
+              // sample
+              rs = stmt.executeQuery("SELECT * FROM " + table + " LIMIT 100");
+              var md = rs.getMetaData();
+              int cc = md.getColumnCount();
+              os.write(",\"sample\":[".getBytes());
+              boolean first = true;
+              while (rs.next()) {
+                if (!first) os.write(',');
+                first = false;
+                os.write('{');
+                for (int i = 1; i <= cc; i++) {
+                  String name = md.getColumnLabel(i);
+                  Object val = rs.getObject(i);
+                  os.write(('\"' + escapeJson(name) + '\"' + ':').getBytes());
+                  if (val == null) os.write("null".getBytes());
+                  else if (val instanceof Number || val instanceof Boolean)
+                    os.write(String.valueOf(val).getBytes());
+                  else {
+                    os.write(('\"' + escapeJson(String.valueOf(val)) + '\"').getBytes());
+                  }
+                  if (i < cc) os.write(',');
+                }
+                os.write('}');
+              }
+              os.write(']');
+              os.write('}');
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
             }
-            os.write('}');
-          }
-          os.write(']');
-          os.write('}');
-        } catch (Exception ex){ throw new RuntimeException(ex); }
-      };
+          };
       return Response.ok(out).build();
     } catch (Exception e) {
       LOGGER.error("Error profiling table {}", table, e);
@@ -138,7 +153,8 @@ public class TypedMetadataResource {
     }
   }
 
-  private static String escapeJson(String s){
-    if (s == null) return ""; return s.replace("\\", "\\\\").replace("\"", "\\\"");
+  private static String escapeJson(String s) {
+    if (s == null) return "";
+    return s.replace("\\", "\\\\").replace("\"", "\\\"");
   }
 }
