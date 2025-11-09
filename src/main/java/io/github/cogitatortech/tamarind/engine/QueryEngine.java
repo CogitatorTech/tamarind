@@ -65,8 +65,42 @@ public interface QueryEngine extends AutoCloseable {
 
     List<String> getColumns(String tableName) throws SQLException;
 
+    /**
+     * Return detailed column metadata (name + type). Default implementation falls back to simple
+     * names only. Implementations override for richer metadata without requiring DESCRIBE queries.
+     *
+     * @param tableName table identifier
+     * @return list of ColumnMeta objects (name, type); never null
+     * @throws SQLException on metadata access error
+     */
+    default List<ColumnMeta> getColumnsWithTypes(String tableName) throws SQLException {
+      var names = getColumns(tableName);
+      var list = new java.util.ArrayList<ColumnMeta>(names.size());
+      for (String n : names) list.add(new ColumnMeta(n, null));
+      return list;
+    }
+
     String getDatabaseProductName() throws SQLException;
 
     String getDatabaseProductVersion() throws SQLException;
+  }
+
+  /** Simple column metadata record. */
+  class ColumnMeta {
+    private final String name;
+    private final String type; // nullable type string
+
+    public ColumnMeta(String name, String type) {
+      this.name = name;
+      this.type = type;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public String getType() {
+      return type;
+    }
   }
 }

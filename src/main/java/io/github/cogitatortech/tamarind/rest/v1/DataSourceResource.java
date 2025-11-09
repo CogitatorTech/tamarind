@@ -205,6 +205,54 @@ public class DataSourceResource {
     }
   }
 
+  @GET
+  @Path("/columns/{table}")
+  public Response listColumns(
+      @HeaderParam("Authorization") String authHeader,
+      @PathParam("table") String table,
+      @QueryParam("includeTypes") @DefaultValue("false") boolean includeTypes) {
+    try {
+      if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return Response.status(Response.Status.UNAUTHORIZED)
+            .entity(ApiResponse.error("UNAUTHORIZED", "Invalid or missing token"))
+            .build();
+      }
+      String token = authHeader.substring(7);
+      if (!userService.validateToken(token)) {
+        return Response.status(Response.Status.UNAUTHORIZED)
+            .entity(ApiResponse.error("UNAUTHORIZED", "Invalid token"))
+            .build();
+      }
+
+      if (table == null || table.isBlank()) {
+        return Response.status(Response.Status.BAD_REQUEST)
+            .entity(ApiResponse.error("INVALID_REQUEST", "Table name is required"))
+            .build();
+      }
+
+      if (!includeTypes) {
+        var cols = engine.getMetadata().getColumns(table);
+        return Response.ok(ApiResponse.success(cols)).build();
+      }
+
+      // Typed metadata using direct JDBC metadata (no DESCRIBE fallback)
+      var typed = engine.getMetadata().getColumnsWithTypes(table);
+      var out = new java.util.ArrayList<java.util.Map<String, Object>>();
+      for (var c : typed) {
+        var m = new java.util.HashMap<String, Object>();
+        m.put("name", c.getName());
+        if (c.getType() != null) m.put("type", c.getType());
+        out.add(m);
+      }
+      return Response.ok(ApiResponse.success(out)).build();
+    } catch (Exception e) {
+      LOGGER.error("Error listing columns for table {}", table, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ApiResponse.error("INTERNAL_ERROR", "Failed to list columns"))
+          .build();
+    }
+  }
+
   private String getFileExtension(String fileName) {
     int lastDot = fileName.lastIndexOf('.');
     return lastDot > 0 ? fileName.substring(lastDot + 1) : "";

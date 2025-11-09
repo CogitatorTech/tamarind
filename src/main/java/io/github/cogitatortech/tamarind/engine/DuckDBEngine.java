@@ -368,6 +368,20 @@ public class DuckDBEngine implements AnalyticalQueryEngine, JdbcQueryEngine {
     }
 
     @Override
+    public List<ColumnMeta> getColumnsWithTypes(String tableName) throws SQLException {
+      List<ColumnMeta> cols = new ArrayList<>();
+      try (Connection conn = engine.getJdbcConnection();
+          ResultSet rs = conn.getMetaData().getColumns(null, null, tableName, null)) {
+        while (rs.next()) {
+          String name = rs.getString("COLUMN_NAME");
+          String typeName = rs.getString("TYPE_NAME");
+          cols.add(new ColumnMeta(name, typeName));
+        }
+      }
+      return cols;
+    }
+
+    @Override
     public String getDatabaseProductName() throws SQLException {
       try (Connection conn = engine.getJdbcConnection()) {
         return conn.getMetaData().getDatabaseProductName();
