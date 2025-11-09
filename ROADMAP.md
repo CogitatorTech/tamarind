@@ -46,15 +46,14 @@ It outlines features to be implemented and their current status.
 ## 2. REST API
 
 * **Query Endpoints**
-    * [x] Basic POST/query endpoint
-    * [x] Batch query execution
+    * [x] Basic query endpoint and execution
     * [x] Versioned API (v1)
     * [x] Query timeout configuration
     * [x] Structured error responses with details
     * [x] Query result pagination
+    * [x] Query history and audit trail
     * [ ] Streaming query results
     * [ ] Query cancellation endpoint
-    * [x] Query history and audit trail
     * [ ] Saved queries management
 * **Response Formats**
     * [x] JSON array output
@@ -70,7 +69,7 @@ It outlines features to be implemented and their current status.
     * [x] Cache hit and miss metadata
     * [ ] GraphQL endpoint
     * [ ] WebSocket support for live queries
-    * [ ] OpenAPI (Swagger) documentation
+    * [ ] OpenAPI documentation
 
 ---
 
@@ -165,8 +164,8 @@ It outlines features to be implemented and their current status.
 * **Ephemeral Storage (for Caching, etc.)**
     * [x] Pluggable EphemeralRepository interface
     * [x] In-memory implementation (default: ConcurrentHashMap with TTL)
-    * [x] Pattern matching (glob syntax)
-    * [x] Atomic increment/decrement operations
+    * [x] Pattern matching (using glob syntax)
+    * [x] Atomic increment and decrement operations
     * [x] TTL support with automatic expiration
     * [ ] Redis implementation for distributed caching
     * [ ] Memcached implementation
@@ -216,7 +215,7 @@ It outlines features to be implemented and their current status.
 ## 8. Rate Limiting and Throttling
 
 * **Request Throttling**
-    * [x] Per-user rate limiting (Bucket4j)
+    * [x] Per-user rate limiting (using Bucket4j)
     * [x] Configurable rate limits
     * [x] Burst capacity support
     * [x] Rate limit violation tracking
