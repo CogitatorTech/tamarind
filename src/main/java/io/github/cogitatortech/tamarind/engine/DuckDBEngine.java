@@ -99,13 +99,13 @@ public class DuckDBEngine implements AnalyticalQueryEngine, JdbcQueryEngine {
         int columnCount = metaData.getColumnCount();
 
         for (int i = 1; i <= columnCount; i++) {
-          columnNames.add(metaData.getColumnName(i));
+          columnNames.add(metaData.getColumnLabel(i));
         }
 
         while (rs.next()) {
           Map<String, Object> row = new LinkedHashMap<>();
           for (int i = 1; i <= columnCount; i++) {
-            row.put(metaData.getColumnName(i), rs.getObject(i));
+            row.put(metaData.getColumnLabel(i), rs.getObject(i));
           }
           rows.add(row);
         }

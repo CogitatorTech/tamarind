@@ -45,6 +45,9 @@ public class QueryResourceV1Async {
   @Inject AuditLogger auditLogger;
   @Inject QueryOptimizer queryOptimizer;
 
+  private static final int MAX_FIELD_STRING_LENGTH = RowSanitizer.MAX_FIELD_STRING_LENGTH;
+  private static final int MAX_ARRAY_ELEMENTS = RowSanitizer.MAX_ARRAY_ELEMENTS;
+
   @POST
   public Uni<Response> executeQueryAsync(
       QueryRequest request, @Context SecurityContext securityContext) {
@@ -201,16 +204,26 @@ public class QueryResourceV1Async {
     long executionTime = System.currentTimeMillis() - startTime;
     auditLogger.logQuery(userId, sql, executionTime, rows.size());
 
+    RowSanitizer.Sanitized sanitizeResult = RowSanitizer.sanitize(rows);
+
     QueryResponse queryResponse =
         new QueryResponse(
             result.getColumnNames(),
-            rows,
+            sanitizeResult.rows(),
             request.getOptions() != null && request.getOptions().getIncludeSchema()
                 ? inferSchema(result)
                 : null);
 
     ApiResponse.ResponseMetadata metadata =
         new ApiResponse.ResponseMetadata(executionTime, rows.size(), fromCache, truncated);
+
+    if (sanitizeResult.truncated()) {
+      Map<String, Object> additional = new HashMap<>();
+      additional.put("fieldTruncation", true);
+      additional.put("maxArrayElements", MAX_ARRAY_ELEMENTS);
+      additional.put("maxStringLength", MAX_FIELD_STRING_LENGTH);
+      metadata.setAdditional(additional);
+    }
 
     return Response.ok(ApiResponse.success(queryResponse, metadata)).build();
   }

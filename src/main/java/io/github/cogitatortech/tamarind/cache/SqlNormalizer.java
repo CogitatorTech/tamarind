@@ -232,6 +232,47 @@ public class SqlNormalizer {
     return sha256Hex(normalized);
   }
 
+  /**
+   * Normalize SQL for result caching: preserves string and numeric literals to ensure queries with
+   * different constant predicates do not collide.
+   *
+   * @param sql raw SQL
+   * @return normalized SQL retaining literal semantics
+   */
+  public static String normalizeForResultCache(String sql) {
+    if (sql == null || sql.isEmpty()) {
+      return "";
+    }
+    try {
+      // Reuse comment removal + quote handling from normalize path but without literal replacement
+      String withoutComments = removeCommentsRespectingQuotes(sql);
+      // Lowercase outside double quotes and collapse whitespace similar to normalize but keep
+      // literals
+      String processed = lowercaseOutsideDoubleQuotes(withoutComments);
+
+      // Normalize spacing around operators
+      processed = processed.replaceAll("\\s*(=|<>|!=|<=|>=|<|>)\\s*", " $1 ");
+      // Normalize comma spacing
+      processed = processed.replaceAll("\\s*,\\s*", ", ");
+      // Collapse whitespace
+      processed = WHITESPACE_PATTERN.matcher(processed).replaceAll(" ");
+      return processed.trim();
+    } catch (Exception e) {
+      LOGGER.warn("Failed to normalize (result cache) SQL, using original: {}", e.getMessage());
+      return sql;
+    }
+  }
+
+  /**
+   * Generate cache key for result caching using normalization that preserves literals.
+   *
+   * @param sql raw SQL
+   * @return hash key
+   */
+  public static String generateResultCacheKey(String sql) {
+    return sha256Hex(normalizeForResultCache(sql));
+  }
+
   private static String sha256Hex(String input) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");

@@ -51,7 +51,7 @@ public class QueryResultCache {
     if (cache == null) {
       return null;
     }
-    String cacheKey = SqlNormalizer.generateCacheKey(sql);
+    String cacheKey = SqlNormalizer.generateResultCacheKey(sql);
     QueryResult result = cache.getIfPresent(cacheKey);
     if (result != null) {
       LOGGER.debug("Cache hit for query: {}", truncate(sql));
@@ -75,7 +75,7 @@ public class QueryResultCache {
       LOGGER.warn("Cache not initialized, skipping put");
       return;
     }
-    String cacheKey = SqlNormalizer.generateCacheKey(sql);
+    String cacheKey = SqlNormalizer.generateResultCacheKey(sql);
     cache.put(cacheKey, result);
     LOGGER.debug("Cached result for query: {}", truncate(sql));
   }

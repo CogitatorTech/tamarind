@@ -87,8 +87,9 @@ public class QueryOptimizer {
     String optimized = sql;
     List<String> appliedOptimizations = new ArrayList<>();
 
-    // Normalize SQL (remove comments, normalize whitespace)
-    String normalized = SqlNormalizer.normalize(sql);
+    // Normalize SQL for execution (preserve literals). This avoids introducing '?' placeholders
+    // which would require prepared statements.
+    String normalized = SqlNormalizer.normalizeForResultCache(sql);
     if (!normalized.equals(sql)) {
       optimized = normalized;
       appliedOptimizations.add("SQL normalization");
@@ -98,7 +99,6 @@ public class QueryOptimizer {
     if (options.addDefaultLimit
         && SELECT_PATTERN.matcher(optimized).find()
         && !LIMIT_PATTERN.matcher(optimized).find()) {
-      // Validate limit value to prevent SQL injection
       if (options.defaultLimitValue <= 0 || options.defaultLimitValue > 1_000_000) {
         throw new IllegalArgumentException(
             "Invalid default limit value: " + options.defaultLimitValue);

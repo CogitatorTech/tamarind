@@ -15,9 +15,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import java.io.OutputStream;
-import java.lang.reflect.Array;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -33,8 +30,10 @@ import org.apache.logging.log4j.Logger;
 public class QueryResourceV1 {
 
   private static final Logger LOGGER = LogManager.getLogger(QueryResourceV1.class);
-  private static final int MAX_FIELD_STRING_LENGTH = 1000; // characters
-  private static final int MAX_ARRAY_ELEMENTS = 64; // elements per array/list
+  private static final int MAX_FIELD_STRING_LENGTH =
+      RowSanitizer.MAX_FIELD_STRING_LENGTH; // characters
+  private static final int MAX_ARRAY_ELEMENTS =
+      RowSanitizer.MAX_ARRAY_ELEMENTS; // elements per array/list
   @Inject QueryEngine engine;
   @Inject QueryResultCache cache;
   @Inject QueryConfig config;
@@ -139,7 +138,7 @@ public class QueryResourceV1 {
       auditLogger.logQuery(userId, sql, executionTime, rows.size());
 
       // Sanitize fields to keep JSON safe/parseable and compact
-      SanitizeResult sanitizeResult = sanitizeRows(rows);
+      RowSanitizer.Sanitized sanitizeResult = RowSanitizer.sanitize(rows);
 
       QueryResponse queryResponse =
           new QueryResponse(
@@ -151,7 +150,7 @@ public class QueryResourceV1 {
 
       ApiResponse.ResponseMetadata metadata =
           new ApiResponse.ResponseMetadata(executionTime, rows.size(), fromCache, truncated);
-      if (sanitizeResult.anyTruncated()) {
+      if (sanitizeResult.truncated()) {
         Map<String, Object> additional = new HashMap<>();
         additional.put("fieldTruncation", true);
         additional.put("maxArrayElements", MAX_ARRAY_ELEMENTS);
@@ -292,99 +291,4 @@ public class QueryResourceV1 {
 
     return str;
   }
-
-  private SanitizeResult sanitizeRows(List<Map<String, Object>> original) {
-    boolean[] truncatedFlag = new boolean[] {false};
-    List<Map<String, Object>> sanitized =
-        original.stream().map(row -> sanitizeRow(row, truncatedFlag)).toList();
-    return new SanitizeResult(sanitized, truncatedFlag[0]);
-  }
-
-  private Map<String, Object> sanitizeRow(Map<String, Object> row, boolean[] truncatedFlag) {
-    Map<String, Object> out = new HashMap<>();
-    for (Map.Entry<String, Object> e : row.entrySet()) {
-      out.put(e.getKey(), sanitizeValue(e.getValue(), truncatedFlag));
-    }
-    return out;
-  }
-
-  private Object sanitizeValue(Object value, boolean[] truncatedFlag) {
-    if (value == null) return null;
-
-    // Basic number handling: quote non-finite values as strings to preserve validity
-    if (value instanceof Double d) {
-      if (d.isNaN() || d.isInfinite()) return String.valueOf(d);
-      return d;
-    }
-    if (value instanceof Float f) {
-      if (f.isNaN() || f.isInfinite()) return String.valueOf(f);
-      return f;
-    }
-
-    // Strings: truncate very long strings
-    if (value instanceof CharSequence cs) {
-      String s = cs.toString();
-      if (s.length() > MAX_FIELD_STRING_LENGTH) {
-        truncatedFlag[0] = true;
-        return s.substring(0, MAX_FIELD_STRING_LENGTH) + "…";
-      }
-      return s;
-    }
-
-    // Primitive/object arrays
-    if (value.getClass().isArray()) {
-      int len = Array.getLength(value);
-      List<Object> list = new java.util.ArrayList<>(Math.min(len, MAX_ARRAY_ELEMENTS));
-      int limit = Math.min(len, MAX_ARRAY_ELEMENTS);
-      for (int i = 0; i < limit; i++) {
-        Object elem = Array.get(value, i);
-        list.add(sanitizeValue(elem, truncatedFlag));
-      }
-      if (len > MAX_ARRAY_ELEMENTS) truncatedFlag[0] = true;
-      return list;
-    }
-
-    // Lists
-    if (value instanceof List<?> l) {
-      int len = l.size();
-      List<Object> out = new java.util.ArrayList<>(Math.min(len, MAX_ARRAY_ELEMENTS));
-      int limit = Math.min(len, MAX_ARRAY_ELEMENTS);
-      for (int i = 0; i < limit; i++) {
-        out.add(sanitizeValue(l.get(i), truncatedFlag));
-      }
-      if (len > MAX_ARRAY_ELEMENTS) truncatedFlag[0] = true;
-      return out;
-    }
-
-    // Nested maps
-    if (value instanceof Map<?, ?> m) {
-      Map<String, Object> out = new HashMap<>();
-      for (Map.Entry<?, ?> entry : m.entrySet()) {
-        Object key = entry.getKey();
-        if (key != null) {
-          out.put(String.valueOf(key), sanitizeValue(entry.getValue(), truncatedFlag));
-        }
-      }
-      return out;
-    }
-
-    // Other numerics are fine
-    if (value instanceof BigDecimal
-        || value instanceof BigInteger
-        || value instanceof Integer
-        || value instanceof Long
-        || value instanceof Short) {
-      return value;
-    }
-
-    // Fallback: toString, with length guard
-    String s = String.valueOf(value);
-    if (s.length() > MAX_FIELD_STRING_LENGTH) {
-      truncatedFlag[0] = true;
-      return s.substring(0, MAX_FIELD_STRING_LENGTH) + "…";
-    }
-    return s;
-  }
-
-  private record SanitizeResult(List<Map<String, Object>> rows, boolean anyTruncated) {}
 }
