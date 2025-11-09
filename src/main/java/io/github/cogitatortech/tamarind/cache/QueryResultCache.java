@@ -45,6 +45,12 @@ public class QueryResultCache {
    * @return Cached result or null
    */
   public QueryResult get(String sql) {
+    if (sql == null) {
+      return null;
+    }
+    if (cache == null) {
+      return null;
+    }
     String cacheKey = SqlNormalizer.generateCacheKey(sql);
     QueryResult result = cache.getIfPresent(cacheKey);
     if (result != null) {
@@ -62,6 +68,13 @@ public class QueryResultCache {
    * @param result The query result
    */
   public void put(String sql, QueryResult result) {
+    if (sql == null || result == null) {
+      return;
+    }
+    if (cache == null) {
+      LOGGER.warn("Cache not initialized, skipping put");
+      return;
+    }
     String cacheKey = SqlNormalizer.generateCacheKey(sql);
     cache.put(cacheKey, result);
     LOGGER.debug("Cached result for query: {}", truncate(sql));
@@ -69,12 +82,17 @@ public class QueryResultCache {
 
   /** Invalidate all cached results. */
   public void invalidateAll() {
-    cache.invalidateAll();
-    LOGGER.info("All query results invalidated");
+    if (cache != null) {
+      cache.invalidateAll();
+      LOGGER.info("All query results invalidated");
+    }
   }
 
   /** Get cache statistics. */
   public String getStats() {
+    if (cache == null) {
+      return "Cache not initialized";
+    }
     return cache.stats().toString();
   }
 
@@ -84,10 +102,16 @@ public class QueryResultCache {
    * @return Hit rate as percentage (0.0 to 1.0)
    */
   public double getHitRate() {
+    if (cache == null) {
+      return 0.0;
+    }
     return cache.stats().hitRate();
   }
 
   private String truncate(String sql) {
+    if (sql == null) {
+      return "";
+    }
     return sql.length() > 50 ? sql.substring(0, 47) + "..." : sql;
   }
 }

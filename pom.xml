@@ -362,6 +362,9 @@
             --add-opens java.base/sun.security.action=ALL-UNNAMED
             --add-opens java.sql/java.sql=ALL-UNNAMED
           </argLine>
+          <systemPropertyVariables>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>

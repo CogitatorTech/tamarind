@@ -1,8 +1,8 @@
 package io.github.cogitatortech.tamarind.cache;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Locale;
 import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,13 +14,14 @@ public class SqlNormalizer {
 
   private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
   private static final Pattern COMMENT_PATTERN =
-      Pattern.compile("--[^\n]*|/\\*.*?\\*/", Pattern.DOTALL);
+      Pattern.compile("--[^\\n]*|/\\*.*?\\*/", Pattern.DOTALL);
 
   /**
    * Normalize SQL query to improve cache hit rates.
    *
-   * <p>Normalization includes: - Converting to lowercase - Removing extra whitespace - Removing
-   * comments - Trimming leading/trailing whitespace
+   * <p>Normalization includes: - Removing comments (handles nested block comments) - Converting to
+   * lowercase (but preserving double-quoted identifiers) - Replacing string and numeric literals
+   * with placeholders - Normalizing spacing around common operators - Removing extra whitespace
    *
    * @param sql The raw SQL query
    * @return Normalized SQL string
@@ -31,23 +32,193 @@ public class SqlNormalizer {
     }
 
     try {
-      // Remove comments
-      String normalized = COMMENT_PATTERN.matcher(sql).replaceAll("");
+      // First remove comments while respecting quoted strings and quoted identifiers
+      String withoutComments = removeCommentsRespectingQuotes(sql);
 
-      // Convert to lowercase for case-insensitive matching
-      normalized = normalized.toLowerCase(Locale.ROOT);
+      StringBuilder out = new StringBuilder(withoutComments.length());
 
-      // Replace multiple whitespaces with single space
-      normalized = WHITESPACE_PATTERN.matcher(normalized).replaceAll(" ");
+      boolean inSingleQuote = false;
+      boolean inDoubleQuote = false;
 
-      // Trim leading/trailing whitespace
-      normalized = normalized.trim();
+      for (int i = 0; i < withoutComments.length(); i++) {
+        char c = withoutComments.charAt(i);
+        if (c == '\'' && !inDoubleQuote) {
+          // toggle single-quote, but handle doubled-single-quote escape
+          if (inSingleQuote) {
+            // lookahead for escaped quote ('' -> stays in single-quoted literal)
+            if (i + 1 < withoutComments.length() && withoutComments.charAt(i + 1) == '\'') {
+              // consume one of the two quotes and keep in single quote
+              out.append("''");
+              i++; // skip the second quote as we've consumed it
+              continue;
+            }
+            inSingleQuote = false;
+            out.append(c);
+            continue;
+          } else {
+            inSingleQuote = true;
+            out.append(c);
+            continue;
+          }
+        }
 
-      return normalized;
+        if (c == '"' && !inSingleQuote) {
+          inDoubleQuote = !inDoubleQuote;
+          out.append(c);
+          continue;
+        }
+
+        out.append(c);
+      }
+
+      String processed = out.toString();
+
+      // Replace all single-quoted string literals with a placeholder '?' (preserve double-quoted
+      // identifiers)
+      processed = processed.replaceAll("'([^']|'')*'", "?");
+
+      // Replace numeric literals with placeholder '?'
+      processed = processed.replaceAll("\\b\\d+(?:\\.\\d+)?\\b", "?");
+
+      // Convert to lowercase while preserving content inside double quotes
+      processed = lowercaseOutsideDoubleQuotes(processed);
+
+      // Normalize spacing around common operators
+      processed = processed.replaceAll("\\s*(=|<>|!=|<=|>=|<|>)\\s*", " $1 ");
+
+      // Normalize comma spacing
+      processed = processed.replaceAll("\\s*,\\s*", ", ");
+
+      // Collapse multiple whitespace characters into a single space
+      processed = WHITESPACE_PATTERN.matcher(processed).replaceAll(" ");
+
+      // Trim
+      processed = processed.trim();
+
+      return processed;
     } catch (Exception e) {
       LOGGER.warn("Failed to normalize SQL, using original: {}", e.getMessage());
       return sql;
     }
+  }
+
+  // Remove comments while respecting quoted strings and double-quoted identifiers; supports nested
+  // /* */
+  private static String removeCommentsRespectingQuotes(String sql) {
+    StringBuilder sb = new StringBuilder(sql.length());
+    int len = sql.length();
+
+    boolean inSingle = false;
+    boolean inDouble = false;
+
+    for (int i = 0; i < len; ) {
+      char c = sql.charAt(i);
+
+      // handle start of single-line comment -- when not inside quotes
+      if (!inSingle && !inDouble && c == '-' && i + 1 < len && sql.charAt(i + 1) == '-') {
+        // skip until end of line
+        i += 2;
+        while (i < len && sql.charAt(i) != '\n') {
+          i++;
+        }
+        // skip the newline as well
+        if (i < len && sql.charAt(i) == '\n') {
+          i++;
+        }
+        continue;
+      }
+
+      // handle block comments /* ... */ with nesting when not inside quotes
+      if (!inSingle && !inDouble && c == '/' && i + 1 < len && sql.charAt(i + 1) == '*') {
+        i += 2;
+        int depth = 1;
+        while (i < len && depth > 0) {
+          if (i + 1 < len && sql.charAt(i) == '/' && sql.charAt(i + 1) == '*') {
+            depth++;
+            i += 2;
+            continue;
+          }
+          if (i + 1 < len && sql.charAt(i) == '*' && sql.charAt(i + 1) == '/') {
+            depth--;
+            i += 2;
+            continue;
+          }
+          // don't treat comment markers inside single/double quotes as comment delimiters
+          if (sql.charAt(i) == '\'') {
+            // skip single-quoted literals inside comments correctly
+            i++;
+            while (i < len) {
+              if (sql.charAt(i) == '\'') {
+                if (i + 1 < len && sql.charAt(i + 1) == '\'') {
+                  i += 2; // escaped quote
+                } else {
+                  i++;
+                  break;
+                }
+              } else {
+                i++;
+              }
+            }
+            continue;
+          }
+          if (sql.charAt(i) == '"') {
+            // skip double-quoted identifiers inside comments
+            i++;
+            while (i < len) {
+              if (sql.charAt(i) == '"') {
+                i++;
+                break;
+              } else {
+                i++;
+              }
+            }
+            continue;
+          }
+          i++;
+        }
+        continue; // skip adding anything for the comment
+      }
+
+      // toggle quote flags when encountering quote characters outside the other quote type
+      if (c == '\'' && !inDouble) {
+        inSingle = !inSingle;
+        sb.append(c);
+        i++;
+        continue;
+      }
+      if (c == '"' && !inSingle) {
+        inDouble = !inDouble;
+        sb.append(c);
+        i++;
+        continue;
+      }
+
+      // normal character
+      sb.append(c);
+      i++;
+    }
+
+    return sb.toString();
+  }
+
+  // Lowercase characters outside double-quoted identifiers and leave quoted identifiers as-is
+  private static String lowercaseOutsideDoubleQuotes(String s) {
+    StringBuilder out = new StringBuilder(s.length());
+    boolean inDouble = false;
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (c == '"') {
+        inDouble = !inDouble;
+        out.append(c);
+        continue;
+      }
+      if (inDouble) {
+        out.append(c); // preserve case inside double quotes
+      } else {
+        out.append(Character.toLowerCase(c));
+      }
+    }
+    return out.toString();
   }
 
   /**
@@ -64,7 +235,7 @@ public class SqlNormalizer {
   private static String sha256Hex(String input) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] hash = digest.digest(input.getBytes());
+      byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
       StringBuilder hexString = new StringBuilder();
       for (byte b : hash) {
         String hex = Integer.toHexString(0xff & b);
