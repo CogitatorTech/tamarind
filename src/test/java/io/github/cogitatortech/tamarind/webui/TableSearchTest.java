@@ -148,7 +148,8 @@ public class TableSearchTest {
 
     // Don't rely on an exact, backslash-heavy literal (which is fragile).
     // Check for the core replace call and the replacement token used by escapeRegex instead.
-    assertTrue(notebookHtml.contains("replace(/"), "Should use replace with a regex to escape characters");
+    assertTrue(
+        notebookHtml.contains("replace(/"), "Should use replace with a regex to escape characters");
     assertTrue(
         notebookHtml.contains("$&") || notebookHtml.contains("\\$&"),
         "Should use '$&' replacement token");
