@@ -27,9 +27,6 @@ It outlines features to be implemented and their current status.
 * **Other Engines**
     * [x] Pluggable query engine interface
     * [x] Analytical engine abstraction
-    * [ ] ClickHouse engine implementation
-    * [ ] Apache Druid engine implementation
-    * [ ] Apache Pinot engine implementation
     * [ ] Engine hot-swapping without restart
 * **Query Optimization**
     * [x] Query validation and sanitization
@@ -182,7 +179,7 @@ It outlines features to be implemented and their current status.
 ## 7. Security and Authentication
 
 * **Authentication**
-    * [x] JWT token support (Quarkus SmallRye JWT)
+    * [x] JWT token support
     * [x] Custom token-based authentication
     * [x] User registration and login API
     * [x] Token validation and management
@@ -215,7 +212,7 @@ It outlines features to be implemented and their current status.
 ## 8. Rate Limiting and Throttling
 
 * **Request Throttling**
-    * [x] Per-user rate limiting (using Bucket4j)
+    * [x] Per-user rate limiting
     * [x] Configurable rate limits
     * [x] Burst capacity support
     * [x] Rate limit violation tracking
@@ -250,7 +247,7 @@ It outlines features to be implemented and their current status.
     * [x] Structured logging with Log4j2
     * [x] JSON audit logs
     * [x] Query execution logging
-    * [ ] Distributed tracing (OpenTelemetry)
+    * [ ] Distributed tracing support
     * [ ] Log aggregation support
     * [ ] Query execution plans logging
 
@@ -414,7 +411,7 @@ It outlines features to be implemented and their current status.
     * [x] API design documentation
     * [x] Getting started guide
     * [x] Web UI guide
-    * [x] Feature status tracking (ROADMAP)
+    * [x] Feature ROADMAP (this file)
     * [x] Bug analysis and fixes documentation
     * [x] Storage configuration guide
     * [x] OLTP implementation guide
